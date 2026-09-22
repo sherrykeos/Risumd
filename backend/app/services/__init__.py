@@ -6,6 +6,7 @@ from app.services.project_service import project_service, ProjectService
 from app.services.experience_service import experience_service, ExperienceService
 from app.services.job_service import job_service, JobService
 from app.services.jd_analysis_service import jd_analysis_service, JDAnalysisService
+from app.services.matching_service import matching_service, MatchingService
 
 __all__ = [
     "technology_service",
@@ -24,4 +25,7 @@ __all__ = [
     "JobService",
     "jd_analysis_service",
     "JDAnalysisService",
+    "matching_service",
+    "MatchingService",
 ]
+

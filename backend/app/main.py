@@ -7,9 +7,11 @@ from app.core.exceptions import (
     EntityNotFoundException,
     EntityAlreadyExistsException,
     ValidationException,
+    JobAnalysisMissingException,
     entity_not_found_handler,
     entity_already_exists_handler,
     validation_exception_handler,
+    job_analysis_missing_handler,
 )
 
 app = FastAPI(
@@ -34,6 +36,8 @@ app.add_middleware(
 app.add_exception_handler(EntityNotFoundException, entity_not_found_handler)
 app.add_exception_handler(EntityAlreadyExistsException, entity_already_exists_handler)
 app.add_exception_handler(ValidationException, validation_exception_handler)
+app.add_exception_handler(JobAnalysisMissingException, job_analysis_missing_handler)
+
 
 # Include API routes
 app.include_router(api_router, prefix=settings.API_PREFIX)

@@ -8,6 +8,7 @@ from app.api.education import router as education_router
 from app.api.achievements import router as achievements_router
 from app.api.jobs import router as jobs_router
 from app.api.jd_analysis import router as jd_analysis_router
+from app.api.matches import router as matches_router
 
 api_router = APIRouter()
 
@@ -19,3 +20,5 @@ api_router.include_router(education_router)
 api_router.include_router(achievements_router)
 api_router.include_router(jobs_router)
 api_router.include_router(jd_analysis_router)
+api_router.include_router(matches_router)
+

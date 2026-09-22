@@ -26,6 +26,13 @@ class ValidationException(Exception):
         super().__init__(self.message)
 
 
+class JobAnalysisMissingException(Exception):
+    def __init__(self, job_id: Any):
+        self.job_id = job_id
+        self.message = f"Job with id '{job_id}' does not have a JD analysis. Matching requires a structured analysis."
+        super().__init__(self.message)
+
+
 def entity_not_found_handler(request: Request, exc: EntityNotFoundException) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
@@ -45,3 +52,11 @@ def validation_exception_handler(request: Request, exc: ValidationException) -> 
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={"detail": exc.message},
     )
+
+
+def job_analysis_missing_handler(request: Request, exc: JobAnalysisMissingException) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": exc.message},
+    )
+
