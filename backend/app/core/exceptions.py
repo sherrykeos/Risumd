@@ -33,6 +33,18 @@ class JobAnalysisMissingException(Exception):
         super().__init__(self.message)
 
 
+class GeminiConfigurationException(Exception):
+    def __init__(self, message: str = "Gemini API is not configured. Please set GEMINI_API_KEY in the environment or .env file."):
+        self.message = message
+        super().__init__(self.message)
+
+
+class GeminiServiceException(Exception):
+    def __init__(self, message: str = "AI JD analysis failed. Please verify the request or try again later."):
+        self.message = message
+        super().__init__(self.message)
+
+
 def entity_not_found_handler(request: Request, exc: EntityNotFoundException) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
@@ -59,4 +71,19 @@ def job_analysis_missing_handler(request: Request, exc: JobAnalysisMissingExcept
         status_code=status.HTTP_400_BAD_REQUEST,
         content={"detail": exc.message},
     )
+
+
+def gemini_configuration_handler(request: Request, exc: GeminiConfigurationException) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": exc.message},
+    )
+
+
+def gemini_service_handler(request: Request, exc: GeminiServiceException) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        content={"detail": exc.message},
+    )
+
 

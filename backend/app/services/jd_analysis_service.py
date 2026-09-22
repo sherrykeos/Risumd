@@ -2,10 +2,15 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import EntityAlreadyExistsException, EntityNotFoundException
+from app.core.exceptions import (
+    EntityAlreadyExistsException,
+    EntityNotFoundException,
+    ValidationException,
+)
 from app.models.jd_analysis import JDAnalysis
 from app.schemas.jd_analysis import JDAnalysisCreate, JDAnalysisUpdate
 from app.services.job_service import job_service
+from app.ai.jd_analyzer import analyze_job_description
 
 
 class JDAnalysisService:
@@ -73,6 +78,38 @@ class JDAnalysisService:
         return analysis
 
     @staticmethod
+    def generate_analysis(db: Session, job_id: int) -> JDAnalysis:
+        """
+        Uses Gemini to extract structured analysis from the Job's raw_description.
+        Creates a new JDAnalysis or updates the existing one in-place.
+        """
+        job = job_service.get_by_id(db, job_id)
+        if not job.raw_description or not job.raw_description.strip():
+            raise ValidationException(f"Job with id '{job_id}' has an empty raw_description.")
+
+        analysis_data = analyze_job_description(job.raw_description)
+
+        if job.analysis:
+            # Update existing analysis in-place
+            return JDAnalysisService.update(
+                db,
+                job_id,
+                JDAnalysisUpdate(
+                    seniority=analysis_data.seniority,
+                    domain=analysis_data.domain,
+                    required_skills=analysis_data.required_skills,
+                    preferred_skills=analysis_data.preferred_skills,
+                    technologies=analysis_data.technologies,
+                    responsibilities=analysis_data.responsibilities,
+                    keywords=analysis_data.keywords,
+                    summary=analysis_data.summary,
+                ),
+            )
+        else:
+            # Create new analysis
+            return JDAnalysisService.create(db, job_id, analysis_data)
+
+    @staticmethod
     def delete(db: Session, job_id: int) -> None:
         analysis = JDAnalysisService.get_by_job_id(db, job_id)
         db.delete(analysis)
@@ -80,3 +117,4 @@ class JDAnalysisService:
 
 
 jd_analysis_service = JDAnalysisService()
+

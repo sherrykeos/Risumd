@@ -1,8 +1,8 @@
-# Risumd — Backend (Phase 1, 2 & 3: Career Vault, Job Analysis & Matching Engine)
+# Risumd — Backend (Phase 1, 2, 3 & 4: Career Vault, Matching Engine & Gemini AI)
 
 Backend foundation for **Risumd**, a personal career-management and tailored-resume application.
 
-Risumd is built local-first. The user maintains a structured Career Vault containing reusable career information (projects, skills, technologies, experience, education, achievements) alongside target Jobs and structured JD Analyses. In Phase 3, an on-demand, deterministic **Career Matching Engine** evaluates Career Vault records against structured JD analyses to select and rank the most relevant items with full explainability.
+Risumd is built local-first. The user maintains a structured Career Vault containing reusable career information (projects, skills, technologies, experience, education, achievements) alongside target Jobs and structured JD Analyses. In Phase 3, an on-demand, deterministic **Career Matching Engine** evaluates Career Vault records against structured JD analyses. In Phase 4, **Gemini AI** extracts structured hiring requirements (skills, technologies, seniority, domain, responsibilities, keywords) from raw job descriptions via `POST /api/jobs/{id}/analysis/generate`.
 
 ---
 
@@ -14,6 +14,11 @@ Risumd Backend follows a clean modular monolith architecture with strict separat
 backend/
 ├── app/
 │   ├── main.py                  # FastAPI entry point, CORS, and exception handlers
+│   ├── ai/                      # Phase 4 Gemini AI Module
+│   │   ├── __init__.py          # AI module exports
+│   │   ├── client.py            # Gemini client initialization & API key validation
+│   │   ├── prompts.py           # System instructions & extraction prompt
+│   │   └── jd_analyzer.py       # Pure analysis function with Pydantic validation
 │   ├── api/                     # Thin REST controllers
 │   │   ├── router.py            # Master API router
 │   │   ├── projects.py          # Project endpoints
@@ -23,7 +28,7 @@ backend/
 │   │   ├── education.py         # Education endpoints
 │   │   ├── achievements.py      # Achievement endpoints
 │   │   ├── jobs.py              # Job endpoints
-│   │   ├── jd_analysis.py       # JD Analysis endpoints
+│   │   ├── jd_analysis.py       # JD Analysis endpoints (including /generate)
 │   │   └── matches.py           # Career Matching endpoint
 │   ├── core/
 │   │   ├── config.py            # Pydantic Settings & environment configuration
@@ -64,7 +69,7 @@ backend/
 │       ├── education_service.py
 │       ├── achievement_service.py
 │       ├── job_service.py
-│       ├── jd_analysis_service.py
+│       ├── jd_analysis_service.py # Includes generate_analysis
 │       └── matching_service.py  # Career Matching orchestrator
 ├── alembic/                     # Database migrations
 │   ├── env.py
@@ -73,7 +78,7 @@ backend/
 │       └── 002_job_and_jd_analysis.py
 ├── scripts/
 │   └── seed.py                  # Development database seed script
-├── tests/                       # Pytest test suite (94 unit/integration tests)
+├── tests/                       # Pytest test suite (107 unit/integration tests)
 │   ├── conftest.py              # Isolated PostgreSQL (risumd_test) fixtures
 │   ├── test_health.py
 │   ├── test_projects.py
@@ -87,13 +92,16 @@ backend/
 │   ├── test_jd_analysis.py
 │   ├── test_matching_normalizer.py
 │   ├── test_matching_scorer.py
-│   └── test_matching_api.py
+│   ├── test_matching_api.py
+│   ├── test_ai_analyzer.py      # Unit tests for Gemini AI analyzer (mocked)
+│   └── test_ai_api.py           # Integration tests for /analysis/generate (mocked)
 ├── alembic.ini                  # Alembic configuration
 ├── pyproject.toml               # Project dependencies & packaging
 ├── .gitignore
 ├── .env.example                 # Environment variable templates
 └── README.md
 ```
+
 
 
 ### Relational Data Model
@@ -216,7 +224,7 @@ The server will be available at `http://127.0.0.1:8000`.
 
 ## 8. Running Tests
 
-The test suite runs against the dedicated PostgreSQL test database `risumd_test`. Tests never modify the development database.
+The test suite runs against the dedicated PostgreSQL test database `risumd_test`. Tests never modify the development database and never make real external AI API calls (all AI responses are mocked during testing).
 
 Run pytest:
 
@@ -224,13 +232,16 @@ Run pytest:
 uv run pytest -v
 ```
 
-Coverage encompasses (94 passing tests):
+Coverage encompasses (107 passing tests):
 - Complete CRUD across all 6 Career Vault entities
 - Complete CRUD for Jobs and 1-to-1 JD Analyses
 - PostgreSQL JSONB array persistence and queries
 - Text normalization, punctuation handling, and tech alias resolution
 - Deterministic scoring, required vs. preferred weights, and tie-breaking
 - Career matching API endpoints and error responses (404 not found, 400 missing analysis)
+- Gemini AI JD Analyzer unit tests (validation, malformed JSON, provider errors, missing API key)
+- Gemini AI API integration tests (`POST /api/jobs/{id}/analysis/generate`, create/update in-place, 404/422/500/502 handling)
+- End-to-end integration: AI-generated analysis flowing into Phase 3 matching engine
 - Relational integrity, cascade behaviors, and empty vault handling
 
 ---
@@ -299,11 +310,13 @@ Interactive documentation is automatically generated by FastAPI:
 
 #### JD Analysis (`/api/jobs/{id}/analysis`)
 * `GET /api/jobs/{id}/analysis` — Retrieve structured JD analysis for a job
-* `POST /api/jobs/{id}/analysis` — Create structured JD analysis for a job (enforces 1-to-1 uniqueness)
+* `POST /api/jobs/{id}/analysis` — Create structured JD analysis manually for a job (enforces 1-to-1 uniqueness)
+* `POST /api/jobs/{id}/analysis/generate` — **[AI]** Extract and persist structured JD analysis from `raw_description` using Gemini AI (creates or updates in-place)
 * `PATCH /api/jobs/{id}/analysis` — Update JD analysis fields (seniority, domain, skills, technologies, responsibilities, keywords, summary)
 * `DELETE /api/jobs/{id}/analysis` — Delete JD analysis (preserves the parent job)
 
 #### Career Matching (`/api/jobs/{id}/matches`)
 * `GET /api/jobs/{id}/matches` — Evaluate Career Vault against structured JD analysis and return deterministic ranked matches with score breakdowns (400 if analysis missing, 404 if job missing)
+
 
 

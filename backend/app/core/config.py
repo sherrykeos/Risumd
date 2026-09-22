@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     TEST_DATABASE_URL: Union[str, None] = None
     CORS_ORIGINS: Union[List[str], str] = ["http://localhost:3000"]
 
+    # Google Gemini AI Configuration
+    GEMINI_API_KEY: Union[str, None] = None
+    GEMINI_MODEL: str = "gemini-2.5-flash"
+
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
