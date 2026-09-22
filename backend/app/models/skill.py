@@ -1,0 +1,31 @@
+from typing import List, Optional, TYPE_CHECKING
+from sqlalchemy import Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.models.base import Base, TimestampMixin
+from app.models.associations import project_skills, experience_skills
+
+if TYPE_CHECKING:
+    from app.models.project import Project
+    from app.models.experience import Experience
+
+
+class Skill(Base, TimestampMixin):
+    __tablename__ = "skills"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
+    category: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Relationships
+    projects: Mapped[List["Project"]] = relationship(
+        "Project",
+        secondary=project_skills,
+        back_populates="skills",
+    )
+    experiences: Mapped[List["Experience"]] = relationship(
+        "Experience",
+        secondary=experience_skills,
+        back_populates="skills",
+    )
