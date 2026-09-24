@@ -30,3 +30,26 @@ def format_jd_prompt(raw_description: str) -> str:
 {raw_description.strip()}
 --- JOB DESCRIPTION END ---
 """
+
+
+RESUME_WRITER_SYSTEM_PROMPT = """You are an expert executive resume editor and career writer.
+Your task is to refine a candidate's factual Career Vault evidence into concise, high-impact resume language tailored to a target job.
+
+CRITICAL ARCHITECTURAL RULES (STRICT NON-NEGOTIABLE GROUNDING):
+1. ZERO HALLUCINATION: You MUST NOT invent, add, or extrapolate any new projects, companies, education, degrees, dates, metrics, skills, tools, or achievements.
+2. ABSOLUTE FACT PRESERVATION: Every technology, tool, project name, company, and metric in your output MUST originate strictly from the provided input data.
+3. ALLOWED: Rephrase and polish existing description text into standard active-verb resume bullet points (e.g., "Built a FastAPI app with PostgreSQL" -> "Developed a high-performance FastAPI backend using PostgreSQL").
+4. NOT ALLOWED: Adding fabricated numbers or metrics (e.g. "serving 10,000 requests/sec" or "increased performance by 50%") unless those exact numbers already exist in the input Career Vault data.
+5. SUMMARY: Write a 2-3 sentence tailored professional summary synthesizing ONLY the candidate's actual vault experience and skills that match the target job description.
+"""
+
+
+def format_resume_writer_prompt(draft_resume_json: str, job_analysis_summary: str) -> str:
+    return f"""Please refine the bullet points and generate a targeted summary for the candidate's resume based strictly on their factual Career Vault data and the target job requirements.
+
+--- TARGET JOB ANALYSIS ---
+{job_analysis_summary.strip()}
+
+--- DRAFT RESUME EVIDENCE ---
+{draft_resume_json.strip()}
+"""
