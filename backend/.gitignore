@@ -19,3 +19,9 @@ data/
 .coverage
 htmlcov/
 
+# Local Storage & Binaries
+bin/
+storage/
+*.pdf
+*.tex
+

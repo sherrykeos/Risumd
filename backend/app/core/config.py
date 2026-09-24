@@ -17,6 +17,19 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Union[str, None] = None
     GEMINI_MODEL: str = "gemini-2.5-flash"
 
+    # Storage and PDF Compiler Configuration
+    STORAGE_DIR: Path = Path("storage")
+    TECTONIC_PATH: str = "bin/tectonic.exe"
+
+    # Candidate Default Contact Profile
+    DEFAULT_CANDIDATE_NAME: str = "Candidate Name"
+    DEFAULT_CANDIDATE_EMAIL: str = "candidate@example.com"
+    DEFAULT_CANDIDATE_PHONE: Union[str, None] = None
+    DEFAULT_CANDIDATE_LOCATION: Union[str, None] = None
+    DEFAULT_CANDIDATE_GITHUB: Union[str, None] = None
+    DEFAULT_CANDIDATE_LINKEDIN: Union[str, None] = None
+    DEFAULT_CANDIDATE_PORTFOLIO: Union[str, None] = None
+
 
     model_config = SettingsConfigDict(
         env_file=".env",

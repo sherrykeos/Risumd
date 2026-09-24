@@ -45,6 +45,12 @@ class GeminiServiceException(Exception):
         super().__init__(self.message)
 
 
+class LaTeXCompilationError(Exception):
+    def __init__(self, message: str = "LaTeX compilation failed."):
+        self.message = message
+        super().__init__(self.message)
+
+
 def entity_not_found_handler(request: Request, exc: EntityNotFoundException) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
@@ -83,6 +89,13 @@ def gemini_configuration_handler(request: Request, exc: GeminiConfigurationExcep
 def gemini_service_handler(request: Request, exc: GeminiServiceException) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_502_BAD_GATEWAY,
+        content={"detail": exc.message},
+    )
+
+
+def latex_compilation_handler(request: Request, exc: LaTeXCompilationError) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": exc.message},
     )
 

@@ -44,3 +44,9 @@ htmlcov/
 .idea/
 .vscode/
 *.swp
+
+# Local Storage & Binaries
+bin/
+storage/
+*.pdf
+*.tex
