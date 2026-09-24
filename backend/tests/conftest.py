@@ -23,9 +23,9 @@ def get_test_db_url() -> str:
         return settings.TEST_DATABASE_URL
     if os.getenv("TEST_DATABASE_URL"):
         return os.environ["TEST_DATABASE_URL"]
-    if "localhost" in settings.DATABASE_URL or "127.0.0.1" in settings.DATABASE_URL:
+    if "postgresql" in settings.DATABASE_URL:
         return re.sub(r"/[^/?]+(\?.*)?$", r"/risumd_test\1", settings.DATABASE_URL)
-    return "postgresql+psycopg://postgres:postgres@localhost:5433/risumd_test"
+    return "postgresql+psycopg://postgres:postgres@localhost:5432/risumd_test"
 
 
 TEST_DATABASE_URL = get_test_db_url()
@@ -34,6 +34,7 @@ test_engine = create_engine(
     TEST_DATABASE_URL,
     echo=False,
     pool_pre_ping=True,
+    pool_recycle=60,
 )
 
 # Safety check: Ensure tests NEVER run against the development database
@@ -65,7 +66,7 @@ TRUNCATE_QUERY = text(
     "TRUNCATE TABLE projects, experiences, skills, technologies, achievements, education, "
     "project_skills, project_technologies, project_achievements, "
     "experience_skills, experience_technologies, experience_achievements, "
-    "jobs, jd_analyses "
+    "jobs, jd_analyses, resume_versions, applications, application_status_history "
     "RESTART IDENTITY CASCADE;"
 )
 

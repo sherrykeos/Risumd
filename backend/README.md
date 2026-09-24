@@ -1,24 +1,29 @@
-# Risumd — Backend (Phase 1, 2, 3 & 4: Career Vault, Matching Engine & Gemini AI)
+# Risumd — Backend Complete MVP (Career Vault, Job Analysis, Matching, Resume Versioning, LaTeX/PDF & Application Tracking)
 
 Backend foundation for **Risumd**, a personal career-management and tailored-resume application.
 
-Risumd is built local-first. The user maintains a structured Career Vault containing reusable career information (projects, skills, technologies, experience, education, achievements) alongside target Jobs and structured JD Analyses. In Phase 3, an on-demand, deterministic **Career Matching Engine** evaluates Career Vault records against structured JD analyses. In Phase 4, **Gemini AI** extracts structured hiring requirements (skills, technologies, seniority, domain, responsibilities, keywords) from raw job descriptions via `POST /api/jobs/{id}/analysis/generate`.
+Risumd is built local-first around a single canonical source of truth: the **Career Vault**. The vault holds reusable career evidence (projects, skills, technologies, experience, education, achievements). Risumd supports an end-to-end backend workflow:
+
+```text
+Job → JD Analysis → Matching Engine → Resume Composition → Resume Version → LaTeX Template → PDF → Application → Status Tracking
+```
 
 ---
 
-## 1. Architecture Overview
+## 1. Architecture & Pipeline Overview
 
-Risumd Backend follows a clean modular monolith architecture with strict separation between API routing, validation schemas, business services, and database persistence models:
+Risumd Backend follows a clean modular monolith architecture with strict separation between API routing, validation schemas, business services, LaTeX rendering, and database persistence models:
 
 ```text
 backend/
 ├── app/
 │   ├── main.py                  # FastAPI entry point, CORS, and exception handlers
-│   ├── ai/                      # Phase 4 Gemini AI Module
-│   │   ├── __init__.py          # AI module exports
+│   ├── ai/                      # Gemini AI Integration Module
+│   │   ├── __init__.py          # AI exports
 │   │   ├── client.py            # Gemini client initialization & API key validation
-│   │   ├── prompts.py           # System instructions & extraction prompt
-│   │   └── jd_analyzer.py       # Pure analysis function with Pydantic validation
+│   │   ├── prompts.py           # System instructions for JD analysis & resume wording
+│   │   ├── jd_analyzer.py       # Structured JD analysis extraction
+│   │   └── resume_writer.py     # Grounded resume wording refinement with fallback
 │   ├── api/                     # Thin REST controllers
 │   │   ├── router.py            # Master API router
 │   │   ├── projects.py          # Project endpoints
@@ -29,16 +34,18 @@ backend/
 │   │   ├── achievements.py      # Achievement endpoints
 │   │   ├── jobs.py              # Job endpoints
 │   │   ├── jd_analysis.py       # JD Analysis endpoints (including /generate)
-│   │   └── matches.py           # Career Matching endpoint
+│   │   ├── matches.py           # Career Matching endpoint
+│   │   ├── resumes.py           # Resume Generation, Versioning & PDF endpoints
+│   │   └── applications.py      # Application Tracking & Status History endpoints
 │   ├── core/
 │   │   ├── config.py            # Pydantic Settings & environment configuration
 │   │   └── exceptions.py        # Domain exceptions & HTTP error response handlers
 │   ├── db/
 │   │   └── database.py          # SQLAlchemy 2.0 Engine & SessionLocal dependency
-│   ├── matching/                # Phase 3 Deterministic Matching Engine
-│   │   ├── __init__.py          # Matching module exports
-│   │   ├── normalizer.py        # Case, whitespace, punctuation & alias normalizer
-│   │   ├── weights.py           # Centralized scoring weights & constants
+│   ├── matching/                # Deterministic Matching Engine
+│   │   ├── __init__.py          # Matching exports
+│   │   ├── normalizer.py        # Normalizer & tech alias mapping
+│   │   ├── weights.py           # Scoring weights & constants
 │   │   ├── types.py             # MatchBreakdown & Ranked response schemas
 │   │   └── scorer.py            # Pure, database-agnostic ranking & scoring pipeline
 │   ├── models/                  # SQLAlchemy 2.0 Declarative Models
@@ -46,21 +53,24 @@ backend/
 │   │   ├── associations.py      # Normalized M2M association tables
 │   │   ├── project.py           # Project entity
 │   │   ├── skill.py             # Skill entity
-│   │   ├── technology.py        # Technology entity
+   ├── technology.py        # Technology entity
 │   │   ├── experience.py        # Experience entity
 │   │   ├── education.py         # Education entity
 │   │   ├── achievement.py       # Achievement entity
 │   │   ├── job.py               # Job entity
-│   │   └── jd_analysis.py       # JD Analysis entity (PostgreSQL JSONB fields)
-│   ├── schemas/                 # Pydantic v2 validation & response schemas
-│   │   ├── project.py
-│   │   ├── skill.py
-│   │   ├── technology.py
-│   │   ├── experience.py
-│   │   ├── education.py
-│   │   ├── achievement.py
-│   │   ├── job.py
-│   │   └── jd_analysis.py
+│   │   ├── jd_analysis.py       # JD Analysis entity (PostgreSQL JSONB fields)
+│   │   ├── enums.py             # ApplicationStatus Enum
+│   │   ├── resume_version.py    # Persistent ResumeVersion entity (JSONB snapshot)
+│   │   ├── application.py       # Application tracking entity
+│   │   └── application_status_history.py # Application status audit log entity
+│   ├── resume/                  # Dedicated Resume Composition & PDF Module
+│   │   ├── __init__.py
+│   │   ├── constants.py         # Deterministic selection limits
+│   │   ├── schemas.py           # Strongly-typed ResumeData Pydantic models
+│   │   ├── renderer.py          # LaTeX character escaping, Jinja2 & Tectonic compiler
+│   │   ├── composer.py          # Evidence selection & draft builder
+│   │   └── templates/
+│   │       └── default.tex      # Modern, ATS-friendly LaTeX template
 │   └── services/                # Business logic & relational resolution
 │       ├── project_service.py
 │       ├── skill_service.py
@@ -69,16 +79,21 @@ backend/
 │       ├── education_service.py
 │       ├── achievement_service.py
 │       ├── job_service.py
-│       ├── jd_analysis_service.py # Includes generate_analysis
-│       └── matching_service.py  # Career Matching orchestrator
+│       ├── jd_analysis_service.py
+│       ├── matching_service.py
+│       ├── resume_service.py    # Resume generation, versioning & PDF lookup
+│       └── application_service.py # Application tracking & status history
 ├── alembic/                     # Database migrations
 │   ├── env.py
 │   └── versions/
 │       ├── 001_initial_career_vault.py
-│       └── 002_job_and_jd_analysis.py
+│       ├── 002_job_and_jd_analysis.py
+│       └── 003_resume_and_application_tracking.py
 ├── scripts/
 │   └── seed.py                  # Development database seed script
-├── tests/                       # Pytest test suite (107 unit/integration tests)
+├── storage/                     # Gitignored local storage for generated .tex and .pdf files
+│   └── resumes/
+├── tests/                       # Complete Pytest test suite (120 unit/integration tests)
 │   ├── conftest.py              # Isolated PostgreSQL (risumd_test) fixtures
 │   ├── test_health.py
 │   ├── test_projects.py
@@ -94,7 +109,13 @@ backend/
 │   ├── test_matching_scorer.py
 │   ├── test_matching_api.py
 │   ├── test_ai_analyzer.py      # Unit tests for Gemini AI analyzer (mocked)
-│   └── test_ai_api.py           # Integration tests for /analysis/generate (mocked)
+│   ├── test_ai_api.py           # Integration tests for /analysis/generate (mocked)
+│   ├── test_resume_composer.py  # Tests for deterministic evidence selection
+│   ├── test_resume_writer.py    # Tests for Gemini resume wording & fallback
+│   ├── test_resume_renderer.py  # Tests for LaTeX character escaping & PDF compilation
+│   ├── test_resume_api.py       # Integration tests for /resume/generate and PDF response
+│   ├── test_application_tracking.py # Tests for application CRUD & status history
+│   └── test_e2e_workflow.py    # Full end-to-end MVP integration test
 ├── alembic.ini                  # Alembic configuration
 ├── pyproject.toml               # Project dependencies & packaging
 ├── .gitignore
@@ -102,221 +123,115 @@ backend/
 └── README.md
 ```
 
+---
 
-
-### Relational Data Model
-
-#### Career Vault
-Relationships between career items are fully normalized using explicit association tables:
+## 2. Relational & Domain Architecture
 
 ```text
-Project
-   ├── project_skills (M2M) ─────────── Skill
-   ├── project_technologies (M2M) ───── Technology
-   └── project_achievements (M2M) ───── Achievement
-
-Experience
-   ├── experience_skills (M2M) ──────── Skill
-   ├── experience_technologies (M2M) ── Technology
-   └── experience_achievements (M2M) ── Achievement
+Job (1) <─────── (1) JDAnalysis
+  │
+  ├─── (1:N) ─── ResumeVersion (Immutable JSONB Snapshot + .tex + .pdf)
+  │                   │
+  └─── (1:N) ────── Application
+                      │
+                      └─── (1:N) ─── ApplicationStatusHistory
 ```
 
-- Deleting a Project or Experience cascades through association rows, but **preserves** the underlying Skills, Technologies, and Achievements.
-- Foreign key constraints and cascades are enforced natively in PostgreSQL.
-
-#### Job & JD Analysis
-Jobs have a 1-to-1 relationship with JDAnalysis:
-
-```text
-Job (1) <─────── (1) JDAnalysis [job_id UNIQUE, ondelete=CASCADE]
-                       ├── required_skills (JSONB array)
-                       ├── preferred_skills (JSONB array)
-                       ├── technologies (JSONB array)
-                       ├── responsibilities (JSONB array)
-                       └── keywords (JSONB array)
-```
-
-- Deleting a Job automatically cascades and removes its associated JDAnalysis.
-- Deleting a JDAnalysis preserves the parent Job.
-- A Job can have at most one JDAnalysis (enforced by a database unique constraint).
+1. **Career Vault**: Canonical source of truth. Resume generation selects evidence but NEVER hallucinates or invents new facts, metrics, or technologies.
+2. **Resume Snapshot**: `ResumeVersion` stores a complete, frozen JSONB snapshot of all data used to construct the resume. Edits to Career Vault never alter previously generated resumes.
+3. **Immutability & Versioning**: Calling `POST /api/jobs/{id}/resume/generate` increments `version_number` (`v1`, `v2`, `v3`) while preserving older versions unchanged.
+4. **LaTeX & PDF Rendering**: Template-based rendering using `jinja2` and standalone local `Tectonic` compiler. All user text is escaped against LaTeX special characters (`&, %, $, #, _, {, }, ~, ^, \`).
+5. **Application Tracking**: `Application` links a Job and the **exact** `ResumeVersion` submitted (`resume_version.job_id == application.job_id`). Every status change generates an immutable `ApplicationStatusHistory` entry (`DRAFT`, `APPLIED`, `SCREENING`, `INTERVIEW`, `OFFER`, `REJECTED`, `WITHDRAWN`).
 
 ---
 
-## 2. Prerequisites
+## 3. Prerequisites
 
 * **Python**: 3.12+ (tested with Python 3.12, 3.13, and 3.14)
 * **uv**: Fast Python package manager ([installation instructions](https://github.com/astral-sh/uv))
-* **PostgreSQL**: Version 14+ must be installed and running locally or accessible via network.
+* **PostgreSQL**: Version 14+ running locally or accessible via network.
+* **Tectonic**: Standalone offline LaTeX engine (`bin/tectonic.exe`).
 
 ---
 
-## 3. Database Setup
+## 4. Database Setup & Migrations
 
-1. Connect to your PostgreSQL server and create the development and testing databases:
+1. Create development and testing databases in PostgreSQL:
    ```sql
    CREATE DATABASE risumd;
    CREATE DATABASE risumd_test;
    ```
 
 2. Configure `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-   Set your PostgreSQL connection string in `backend/.env`:
    ```env
    DATABASE_URL=postgresql+psycopg://postgres:password@localhost:5432/risumd
    TEST_DATABASE_URL=postgresql+psycopg://postgres:password@localhost:5432/risumd_test
    ```
-   *(Adjust user, password, host, and port as needed for your PostgreSQL installation).*
+
+3. Run Alembic migrations:
+   ```bash
+   uv run alembic upgrade head
+   ```
 
 ---
 
-## 4. Installation
+## 5. Running the Application
 
-Synchronize dependencies with `uv`:
+1. Hot-reloading development server:
+   ```bash
+   uv run uvicorn app.main:app --reload
+   ```
 
-```bash
-cd backend
-uv sync
+2. Run automated test suite:
+   ```bash
+   uv run pytest -v
+   ```
+
+---
+
+## 6. Complete End-to-End Backend Workflow
+
+```text
+1. Create Job (`POST /api/jobs`)
+        ↓
+2. Generate JD Analysis (`POST /api/jobs/{id}/analysis/generate`)
+        ↓
+3. View Ranked Evidence (`GET /api/jobs/{id}/matches`)
+        ↓
+4. Generate Resume (`POST /api/jobs/{id}/resume/generate`)
+        ↓
+5. Download PDF (`GET /api/resumes/{id}/pdf`)
+        ↓
+6. Create Application (`POST /api/applications`)
+        ↓
+7. Update Status (`PATCH /api/applications/{id}`)
+        ↓
+8. Audit Trail (`GET /api/applications/{id}`)
 ```
 
 ---
 
-## 5. Database Migrations
+## 7. API Documentation
 
-Apply Alembic migrations to create the database schema in PostgreSQL:
-
-```bash
-uv run alembic upgrade head
-```
-
-To roll back a migration:
-
-```bash
-uv run alembic downgrade -1
-```
-
----
-
-## 6. Development Seed Data
-
-Populate the database with sample fictional projects, skills, technologies, work experience, and sample jobs:
-
-```bash
-uv run python scripts/seed.py
-```
-
-*Note: The seed script is idempotent and will cleanly skip execution if sample data already exists.*
-
----
-
-## 7. Starting the Server
-
-Run the development server with hot-reloading:
-
-```bash
-uv run uvicorn app.main:app --reload
-```
-
-The server will be available at `http://127.0.0.1:8000`.
-
----
-
-## 8. Running Tests
-
-The test suite runs against the dedicated PostgreSQL test database `risumd_test`. Tests never modify the development database and never make real external AI API calls (all AI responses are mocked during testing).
-
-Run pytest:
-
-```bash
-uv run pytest -v
-```
-
-Coverage encompasses (107 passing tests):
-- Complete CRUD across all 6 Career Vault entities
-- Complete CRUD for Jobs and 1-to-1 JD Analyses
-- PostgreSQL JSONB array persistence and queries
-- Text normalization, punctuation handling, and tech alias resolution
-- Deterministic scoring, required vs. preferred weights, and tie-breaking
-- Career matching API endpoints and error responses (404 not found, 400 missing analysis)
-- Gemini AI JD Analyzer unit tests (validation, malformed JSON, provider errors, missing API key)
-- Gemini AI API integration tests (`POST /api/jobs/{id}/analysis/generate`, create/update in-place, 404/422/500/502 handling)
-- End-to-end integration: AI-generated analysis flowing into Phase 3 matching engine
-- Relational integrity, cascade behaviors, and empty vault handling
-
----
-
-## 9. API Documentation
-
-Interactive documentation is automatically generated by FastAPI:
-
+Interactive API documentation available at:
 * **Swagger UI**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 * **ReDoc**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
-* **OpenAPI JSON**: [http://127.0.0.1:8000/openapi.json](http://127.0.0.1:8000/openapi.json)
 
-### Available Endpoints
+### Core Endpoints
 
-#### System
-* `GET /health` — Service health check
+#### Resume Generation & PDF (`/api/resumes`)
+* `POST /api/jobs/{id}/resume/generate` — Generate a tailored, versioned resume (JSON + LaTeX + PDF)
+* `GET /api/jobs/{id}/resumes` — List all resume versions for a specific job
+* `GET /api/resumes` — List all resume versions
+* `GET /api/resumes/{id}` — Retrieve a specific resume version snapshot
+* `GET /api/resumes/{id}/pdf` — Download the compiled PDF file
 
-#### Projects (`/api/projects`)
-* `GET /api/projects` — List all projects
-* `GET /api/projects/{id}` — Retrieve a project by ID with resolved technologies, skills, and achievements
-* `POST /api/projects` — Create a project (supports nested technology names, skill names, and achievements)
-* `PATCH /api/projects/{id}` — Update a project
-* `DELETE /api/projects/{id}` — Delete a project
-
-#### Skills (`/api/skills`)
-* `GET /api/skills` — List all skills (supports `?category=...` filtering)
-* `GET /api/skills/{id}` — Retrieve a skill by ID
-* `POST /api/skills` — Create a unique skill
-* `PATCH /api/skills/{id}` — Update a skill
-* `DELETE /api/skills/{id}` — Delete a skill
-
-#### Technologies (`/api/technologies`)
-* `GET /api/technologies` — List all technologies
-* `GET /api/technologies/{id}` — Retrieve a technology by ID
-* `POST /api/technologies` — Create a unique technology
-* `PATCH /api/technologies/{id}` — Update a technology
-* `DELETE /api/technologies/{id}` — Delete a technology
-
-#### Experience (`/api/experience`)
-* `GET /api/experience` — List all work experiences
-* `GET /api/experience/{id}` — Retrieve an experience by ID
-* `POST /api/experience` — Create an experience (supports nested associations)
-* `PATCH /api/experience/{id}` — Update an experience
-* `DELETE /api/experience/{id}` — Delete an experience
-
-#### Education (`/api/education`)
-* `GET /api/education` — List all education records
-* `GET /api/education/{id}` — Retrieve an education record by ID
-* `POST /api/education` — Create an education record
-* `PATCH /api/education/{id}` — Update an education record
-* `DELETE /api/education/{id}` — Delete an education record
-
-#### Achievements (`/api/achievements`)
-* `GET /api/achievements` — List all achievements
-* `GET /api/achievements/{id}` — Retrieve an achievement by ID
-* `POST /api/achievements` — Create an achievement
-* `PATCH /api/achievements/{id}` — Update an achievement
-* `DELETE /api/achievements/{id}` — Delete an achievement
-
-#### Jobs (`/api/jobs`)
-* `GET /api/jobs` — List all jobs as direct `list[JobResponse]` (includes nested `analysis` if present)
-* `GET /api/jobs/{id}` — Retrieve a job by ID (includes nested `analysis` if present)
-* `POST /api/jobs` — Create a new job listing
-* `PATCH /api/jobs/{id}` — Update job fields
-* `DELETE /api/jobs/{id}` — Delete a job (cascades to its analysis)
-
-#### JD Analysis (`/api/jobs/{id}/analysis`)
-* `GET /api/jobs/{id}/analysis` — Retrieve structured JD analysis for a job
-* `POST /api/jobs/{id}/analysis` — Create structured JD analysis manually for a job (enforces 1-to-1 uniqueness)
-* `POST /api/jobs/{id}/analysis/generate` — **[AI]** Extract and persist structured JD analysis from `raw_description` using Gemini AI (creates or updates in-place)
-* `PATCH /api/jobs/{id}/analysis` — Update JD analysis fields (seniority, domain, skills, technologies, responsibilities, keywords, summary)
-* `DELETE /api/jobs/{id}/analysis` — Delete JD analysis (preserves the parent job)
-
-#### Career Matching (`/api/jobs/{id}/matches`)
-* `GET /api/jobs/{id}/matches` — Evaluate Career Vault against structured JD analysis and return deterministic ranked matches with score breakdowns (400 if analysis missing, 404 if job missing)
+#### Application Tracking (`/api/applications`)
+* `GET /api/applications` — List all applications
+* `POST /api/applications` — Create a new job application (requires `job_id` and `resume_version_id`)
+* `GET /api/applications/{id}` — Retrieve application details including complete status transition history
+* `PATCH /api/applications/{id}` — Update application status, notes, or submission timestamp (records history)
+* `DELETE /api/applications/{id}` — Delete an application
 
 
 
