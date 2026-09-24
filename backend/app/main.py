@@ -10,12 +10,14 @@ from app.core.exceptions import (
     JobAnalysisMissingException,
     GeminiConfigurationException,
     GeminiServiceException,
+    LaTeXCompilationError,
     entity_not_found_handler,
     entity_already_exists_handler,
     validation_exception_handler,
     job_analysis_missing_handler,
     gemini_configuration_handler,
     gemini_service_handler,
+    latex_compilation_handler,
 )
 
 app = FastAPI(
@@ -43,6 +45,7 @@ app.add_exception_handler(ValidationException, validation_exception_handler)
 app.add_exception_handler(JobAnalysisMissingException, job_analysis_missing_handler)
 app.add_exception_handler(GeminiConfigurationException, gemini_configuration_handler)
 app.add_exception_handler(GeminiServiceException, gemini_service_handler)
+app.add_exception_handler(LaTeXCompilationError, latex_compilation_handler)
 
 
 

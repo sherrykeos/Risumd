@@ -9,6 +9,8 @@ from app.api.achievements import router as achievements_router
 from app.api.jobs import router as jobs_router
 from app.api.jd_analysis import router as jd_analysis_router
 from app.api.matches import router as matches_router
+from app.api.resumes import router as resumes_router
+from app.api.applications import router as applications_router
 
 api_router = APIRouter()
 
@@ -21,4 +23,6 @@ api_router.include_router(achievements_router)
 api_router.include_router(jobs_router)
 api_router.include_router(jd_analysis_router)
 api_router.include_router(matches_router)
+api_router.include_router(resumes_router)
+api_router.include_router(applications_router)
 
