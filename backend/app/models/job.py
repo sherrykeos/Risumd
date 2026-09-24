@@ -1,4 +1,4 @@
-from typing import Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 from sqlalchemy import Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -6,6 +6,8 @@ from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.jd_analysis import JDAnalysis
+    from app.models.resume_version import ResumeVersion
+    from app.models.application import Application
 
 
 class Job(Base, TimestampMixin):
@@ -25,4 +27,17 @@ class Job(Base, TimestampMixin):
         uselist=False,
         cascade="all, delete-orphan",
         lazy="selectin",
+    )
+
+    # 1-to-Many relationships with ResumeVersion and Application
+    resumes: Mapped[List["ResumeVersion"]] = relationship(
+        "ResumeVersion",
+        back_populates="job",
+        cascade="all, delete-orphan",
+        order_by="ResumeVersion.version_number.asc()",
+    )
+    applications: Mapped[List["Application"]] = relationship(
+        "Application",
+        back_populates="job",
+        cascade="all, delete-orphan",
     )
