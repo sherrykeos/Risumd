@@ -36,3 +36,4 @@ Personal career-management and tailored-resume application.
    ```
 
 For full backend details, see [backend/README.md](file:///d:/coding/web%20dev/WD-PROJECTS/Risumd/backend/README.md).
+h
