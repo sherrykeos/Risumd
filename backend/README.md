@@ -149,43 +149,102 @@ Job (1) <─────── (1) JDAnalysis
 
 * **Python**: 3.12+ (tested with Python 3.12, 3.13, and 3.14)
 * **uv**: Fast Python package manager ([installation instructions](https://github.com/astral-sh/uv))
-* **PostgreSQL**: Version 14+ running locally or accessible via network.
+* **PostgreSQL**: Version 14+ running locally (e.g., PostgreSQL service / Docker) or hosted (e.g., Neon, Supabase).
 * **Tectonic**: Standalone offline LaTeX engine (`bin/tectonic.exe`).
 
 ---
 
-## 4. Database Setup & Migrations
+## 4. Environment & Database Setup
 
-1. Create development and testing databases in PostgreSQL:
-   ```sql
-   CREATE DATABASE risumd;
-   CREATE DATABASE risumd_test;
-   ```
+### Step 1: Navigate to the Backend Directory
+Always make sure your terminal is inside the `backend/` directory before executing `uv` commands:
+```bash
+cd backend
+```
 
-2. Configure `.env`:
-   ```env
-   DATABASE_URL=postgresql+psycopg://postgres:password@localhost:5432/risumd
-   TEST_DATABASE_URL=postgresql+psycopg://postgres:password@localhost:5432/risumd_test
-   ```
+### Step 2: Install Dependencies
+Sync the virtual environment and install all runtime & development dependencies:
+```bash
+uv sync
+```
 
-3. Run Alembic migrations:
-   ```bash
-   uv run alembic upgrade head
-   ```
+### Step 3: Configure Environment Variables
+Create your `.env` file from `.env.example`:
+```bash
+# Windows PowerShell
+Copy-Item .env.example .env
+
+# Linux / macOS / Git Bash
+cp .env.example .env
+```
+
+Edit `.env` with your PostgreSQL database credentials and optional Gemini AI API key:
+```env
+# Database Configuration
+DATABASE_URL=postgresql+psycopg://postgres:password@localhost:5432/risumd
+TEST_DATABASE_URL=postgresql+psycopg://postgres:password@localhost:5432/risumd_test
+
+# CORS Configuration
+CORS_ORIGINS=http://localhost:3000
+
+# Application Configuration
+API_PREFIX=/api
+API_V1_PREFIX=/api
+ENVIRONMENT=development
+PROJECT_NAME="Risumd Backend"
+
+# Google Gemini AI Configuration (optional, required for AI analysis & wording)
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+### Step 4: Run Database Migrations
+Apply the database schema using Alembic:
+```bash
+uv run alembic upgrade head
+```
+
+*(Optional)* Seed development database with sample Career Vault data:
+```bash
+uv run python scripts/seed.py
+```
 
 ---
 
-## 5. Running the Application
+## 5. Running the Application & Tests
 
-1. Hot-reloading development server:
-   ```bash
-   uv run uvicorn app.main:app --reload
-   ```
+### Start the Development Server
+Run the FastAPI development server with hot-reload enabled:
+```bash
+uv run uvicorn app.main:app --reload
+```
+The server will start at:
+* **Base API**: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+* **Interactive Swagger UI**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+* **ReDoc**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 
-2. Run automated test suite:
-   ```bash
-   uv run pytest -v
-   ```
+> **Alternative (using activated virtual environment directly):**
+> ```bash
+> # Windows (PowerShell)
+> .venv\Scripts\Activate.ps1
+> uvicorn app.main:app --reload
+>
+> # Linux / macOS
+> source .venv/bin/activate
+> uvicorn app.main:app --reload
+> ```
+
+### Run Automated Tests
+Execute the Pytest test suite:
+```bash
+uv run pytest -v
+```
+
+> [!NOTE]
+> **Troubleshooting `Failed to spawn: pytest` / `program not found`**:
+> If you encounter `error: Failed to spawn: pytest`, check the following:
+> 1. Ensure your current working directory is `backend` (`cd backend`). If executing from the project root, use `uv --directory backend run pytest -v`.
+> 2. Ensure dependencies are installed by running `uv sync`.
 
 ---
 
