@@ -1,16 +1,28 @@
 from datetime import date
-from typing import List, Optional
-from sqlalchemy import Date, Integer, String, Text
+from typing import List, Optional, TYPE_CHECKING
+from sqlalchemy import Date, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
 from app.models.associations import experience_skills, experience_technologies, experience_achievements
+
+if TYPE_CHECKING:
+    from app.models.user import User
+    from app.models.skill import Skill
+    from app.models.technology import Technology
+    from app.models.achievement import Achievement
 
 
 class Experience(Base, TimestampMixin):
     __tablename__ = "experiences"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     company: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -37,3 +49,4 @@ class Experience(Base, TimestampMixin):
         back_populates="experiences",
         lazy="selectin",
     )
+    user: Mapped["User"] = relationship("User", back_populates="experiences")

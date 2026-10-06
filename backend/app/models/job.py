@@ -1,10 +1,11 @@
 from typing import List, Optional, TYPE_CHECKING
-from sqlalchemy import Integer, String, Text
+from sqlalchemy import ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.user import User
     from app.models.jd_analysis import JDAnalysis
     from app.models.resume_version import ResumeVersion
     from app.models.application import Application
@@ -14,11 +15,20 @@ class Job(Base, TimestampMixin):
     __tablename__ = "jobs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     company: Mapped[str] = mapped_column(String(255), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     source_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     raw_description: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="jobs")
 
     # 1-to-1 relationship with JDAnalysis
     analysis: Mapped[Optional["JDAnalysis"]] = relationship(

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.user import User
     from app.models.job import Job
     from app.models.application import Application
 
@@ -14,6 +15,12 @@ class ResumeVersion(Base, TimestampMixin):
     __tablename__ = "resume_versions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     job_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("jobs.id", ondelete="CASCADE"),
@@ -29,6 +36,7 @@ class ResumeVersion(Base, TimestampMixin):
     pdf_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
     # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="resumes")
     job: Mapped["Job"] = relationship("Job", back_populates="resumes")
     applications: Mapped[List["Application"]] = relationship(
         "Application",

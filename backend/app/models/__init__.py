@@ -1,4 +1,6 @@
 from app.models.base import Base, TimestampMixin
+from app.models.user import User
+from app.models.session import UserSession
 from app.models.associations import (
     project_skills,
     project_technologies,
@@ -23,6 +25,8 @@ from app.models.application_status_history import ApplicationStatusHistory
 __all__ = [
     "Base",
     "TimestampMixin",
+    "User",
+    "UserSession",
     "project_skills",
     "project_technologies",
     "project_achievements",

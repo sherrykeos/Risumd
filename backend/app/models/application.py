@@ -7,6 +7,7 @@ from app.models.base import Base, TimestampMixin
 from app.models.enums import ApplicationStatus
 
 if TYPE_CHECKING:
+    from app.models.user import User
     from app.models.job import Job
     from app.models.resume_version import ResumeVersion
     from app.models.application_status_history import ApplicationStatusHistory
@@ -16,6 +17,12 @@ class Application(Base, TimestampMixin):
     __tablename__ = "applications"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     job_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("jobs.id", ondelete="CASCADE"),
@@ -37,6 +44,7 @@ class Application(Base, TimestampMixin):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="applications")
     job: Mapped["Job"] = relationship("Job", back_populates="applications")
     resume_version: Mapped["ResumeVersion"] = relationship("ResumeVersion", back_populates="applications")
     status_history: Mapped[List["ApplicationStatusHistory"]] = relationship(
