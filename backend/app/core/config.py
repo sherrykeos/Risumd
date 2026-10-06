@@ -17,6 +17,19 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Union[str, None] = None
     GEMINI_MODEL: str = "gemini-2.5-flash"
 
+    # Google OAuth 2.0 Configuration
+    GOOGLE_CLIENT_ID: Union[str, None] = None
+    GOOGLE_CLIENT_SECRET: Union[str, None] = None
+    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/auth/google/callback"
+    FRONTEND_URL: str = "http://localhost:3000"
+
+    # Session and Cookie Configuration
+    SESSION_COOKIE_NAME: str = "risumd_session"
+    SESSION_COOKIE_SECURE: bool = False
+    SESSION_COOKIE_SAMESITE: str = "lax"
+    SESSION_EXPIRE_DAYS: int = 30
+    SESSION_SECRET: str = "risumd-super-secret-session-key-change-in-production"
+
     # Storage and PDF Compiler Configuration
     STORAGE_DIR: Path = Path("storage")
     TECTONIC_PATH: str = "bin/tectonic.exe"
