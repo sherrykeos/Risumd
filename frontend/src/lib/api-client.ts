@@ -25,6 +25,7 @@ export async function fetchApi<T>(
   };
 
   const config: RequestInit = {
+    credentials: 'include',
     ...options,
     headers,
   };

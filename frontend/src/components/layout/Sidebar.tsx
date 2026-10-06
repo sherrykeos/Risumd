@@ -11,8 +11,11 @@ import {
   FolderKanban,
   Settings,
   Sparkles,
+  LogOut,
+  LogIn,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 const navItems = [
   {
@@ -35,6 +38,7 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user, isAuthenticated, isLoading, logout, login } = useAuth();
 
   return (
     <aside className="hidden lg:flex w-64 flex-col fixed inset-y-0 z-30 bg-slate-900 text-slate-100 border-r border-slate-800">
@@ -87,12 +91,46 @@ export function Sidebar() {
         ))}
       </div>
 
-      {/* Footer / System Info */}
+      {/* User Info / Logout Section */}
       <div className="p-4 border-t border-slate-800">
-        <div className="rounded-lg bg-slate-800/50 p-3 text-xs text-slate-400 border border-slate-800">
-          <p className="font-medium text-slate-200">Risumd MVP v0.1</p>
-          <p className="text-[11px] mt-0.5 text-slate-400">Tailored Resume Engine</p>
-        </div>
+        {isAuthenticated && user ? (
+          <div className="rounded-lg bg-slate-800/60 p-3 text-xs border border-slate-700/60 space-y-2.5">
+            <div className="flex items-center space-x-2.5">
+              {user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.name}
+                  className="h-7 w-7 rounded-full object-cover border border-slate-600"
+                />
+              ) : (
+                <div className="h-7 w-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold text-xs">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-slate-200 truncate">{user.name}</p>
+                <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => logout()}
+              className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-colors"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Sign out</span>
+            </button>
+          </div>
+        ) : !isLoading ? (
+          <button
+            type="button"
+            onClick={() => login()}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-colors"
+          >
+            <LogIn className="h-3.5 w-3.5" />
+            <span>Sign in with Google</span>
+          </button>
+        ) : null}
       </div>
     </aside>
   );

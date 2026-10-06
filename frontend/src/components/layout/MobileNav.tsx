@@ -13,8 +13,11 @@ import {
   FolderKanban,
   Settings,
   Sparkles,
+  LogOut,
+  LogIn,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 const navItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -28,6 +31,7 @@ const navItems = [
 export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const { user, isAuthenticated, isLoading, logout, login } = useAuth();
 
   return (
     <div className="lg:hidden border-b border-slate-200 bg-slate-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-40">
@@ -70,6 +74,53 @@ export function MobileNav() {
               </Link>
             );
           })}
+
+          <div className="pt-3 mt-2 border-t border-slate-800">
+            {isAuthenticated && user ? (
+              <div className="flex items-center justify-between px-3 py-2 bg-slate-800/60 rounded-lg">
+                <div className="flex items-center space-x-2 min-w-0">
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.name}
+                      className="h-7 w-7 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-7 w-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-white truncate">{user.name}</p>
+                    <p className="text-[10px] text-slate-400 truncate">{user.email}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOpen(false);
+                    logout();
+                  }}
+                  className="p-1.5 rounded-md hover:bg-slate-700 text-slate-400 hover:text-white"
+                  title="Sign out"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            ) : !isLoading ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  login();
+                }}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium"
+              >
+                <LogIn className="h-4 w-4" />
+                <span>Sign in with Google</span>
+              </button>
+            ) : null}
+          </div>
         </div>
       )}
     </div>
