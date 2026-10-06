@@ -1,5 +1,5 @@
 from typing import List
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import EntityNotFoundException
@@ -12,9 +12,10 @@ from app.services.achievement_service import achievement_service
 
 class ExperienceService:
     @staticmethod
-    def get_all(db: Session, skip: int = 0, limit: int = 100) -> List[Experience]:
+    def get_all(db: Session, user_id: int, skip: int = 0, limit: int = 100) -> List[Experience]:
         stmt = (
             select(Experience)
+            .where(Experience.user_id == user_id)
             .order_by(Experience.start_date.desc().nullslast(), Experience.created_at.desc())
             .offset(skip)
             .limit(limit)
@@ -22,16 +23,19 @@ class ExperienceService:
         return list(db.scalars(stmt).all())
 
     @staticmethod
-    def get_by_id(db: Session, experience_id: int) -> Experience:
-        stmt = select(Experience).where(Experience.id == experience_id)
+    def get_by_id(db: Session, experience_id: int, user_id: int) -> Experience:
+        stmt = select(Experience).where(
+            and_(Experience.id == experience_id, Experience.user_id == user_id)
+        )
         experience = db.scalar(stmt)
         if not experience:
             raise EntityNotFoundException("Experience", experience_id)
         return experience
 
     @staticmethod
-    def create(db: Session, data: ExperienceCreate) -> Experience:
+    def create(db: Session, user_id: int, data: ExperienceCreate) -> Experience:
         experience = Experience(
+            user_id=user_id,
             company=data.company.strip(),
             role=data.role.strip(),
             description=data.description,
@@ -42,21 +46,21 @@ class ExperienceService:
         db.add(experience)
 
         if data.technologies:
-            experience.technologies = technology_service.get_or_create_multiple(db, data.technologies)
+            experience.technologies = technology_service.get_or_create_multiple(db, user_id, data.technologies)
 
         if data.skills:
-            experience.skills = skill_service.get_or_create_multiple(db, data.skills)
+            experience.skills = skill_service.get_or_create_multiple(db, user_id, data.skills)
 
         if data.achievements:
-            experience.achievements = achievement_service.resolve_or_create_multiple(db, data.achievements)
+            experience.achievements = achievement_service.resolve_or_create_multiple(db, user_id, data.achievements)
 
         db.commit()
         db.refresh(experience)
         return experience
 
     @staticmethod
-    def update(db: Session, experience_id: int, data: ExperienceUpdate) -> Experience:
-        experience = ExperienceService.get_by_id(db, experience_id)
+    def update(db: Session, experience_id: int, user_id: int, data: ExperienceUpdate) -> Experience:
+        experience = ExperienceService.get_by_id(db, experience_id, user_id)
 
         if data.company is not None:
             experience.company = data.company.strip()
@@ -72,21 +76,21 @@ class ExperienceService:
             experience.location = data.location.strip() if data.location else None
 
         if data.technologies is not None:
-            experience.technologies = technology_service.get_or_create_multiple(db, data.technologies)
+            experience.technologies = technology_service.get_or_create_multiple(db, user_id, data.technologies)
 
         if data.skills is not None:
-            experience.skills = skill_service.get_or_create_multiple(db, data.skills)
+            experience.skills = skill_service.get_or_create_multiple(db, user_id, data.skills)
 
         if data.achievements is not None:
-            experience.achievements = achievement_service.resolve_or_create_multiple(db, data.achievements)
+            experience.achievements = achievement_service.resolve_or_create_multiple(db, user_id, data.achievements)
 
         db.commit()
         db.refresh(experience)
         return experience
 
     @staticmethod
-    def delete(db: Session, experience_id: int) -> None:
-        experience = ExperienceService.get_by_id(db, experience_id)
+    def delete(db: Session, experience_id: int, user_id: int) -> None:
+        experience = ExperienceService.get_by_id(db, experience_id, user_id)
         db.delete(experience)
         db.commit()
 

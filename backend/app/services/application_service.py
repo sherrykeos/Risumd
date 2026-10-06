@@ -16,17 +16,21 @@ logger = logging.getLogger(__name__)
 
 class ApplicationService:
     @staticmethod
-    def create_application(db: Session, data: ApplicationCreate) -> Application:
+    def create_application(db: Session, user_id: int, data: ApplicationCreate) -> Application:
         """
         Creates a new Job Application linking a Job and an EXACT ResumeVersion.
-        Validates that the ResumeVersion belongs to the target Job.
+        Validates that both Job and ResumeVersion belong to the authenticated user.
         Records the initial status history entry.
         """
-        job = db.query(Job).filter(Job.id == data.job_id).first()
+        job = db.query(Job).filter(Job.id == data.job_id, Job.user_id == user_id).first()
         if not job:
             raise EntityNotFoundException("Job", data.job_id)
 
-        resume_version = db.query(ResumeVersion).filter(ResumeVersion.id == data.resume_version_id).first()
+        resume_version = (
+            db.query(ResumeVersion)
+            .filter(ResumeVersion.id == data.resume_version_id, ResumeVersion.user_id == user_id)
+            .first()
+        )
         if not resume_version:
             raise EntityNotFoundException("ResumeVersion", data.resume_version_id)
 
@@ -42,6 +46,7 @@ class ApplicationService:
             applied_at = datetime.now(timezone.utc)
 
         app = Application(
+            user_id=user_id,
             job_id=data.job_id,
             resume_version_id=data.resume_version_id,
             status=data.status,
@@ -61,10 +66,10 @@ class ApplicationService:
         db.add(history)
         db.commit()
 
-        return ApplicationService.get_application(db, app.id)
+        return ApplicationService.get_application(db, app.id, user_id=user_id)
 
     @staticmethod
-    def get_application(db: Session, app_id: int) -> Application:
+    def get_application(db: Session, app_id: int, user_id: int) -> Application:
         app = (
             db.query(Application)
             .options(
@@ -72,7 +77,7 @@ class ApplicationService:
                 selectinload(Application.resume_version),
                 selectinload(Application.status_history),
             )
-            .filter(Application.id == app_id)
+            .filter(Application.id == app_id, Application.user_id == user_id)
             .first()
         )
         if not app:
@@ -80,7 +85,7 @@ class ApplicationService:
         return app
 
     @staticmethod
-    def list_applications(db: Session) -> List[Application]:
+    def list_applications(db: Session, user_id: int) -> List[Application]:
         return (
             db.query(Application)
             .options(
@@ -88,17 +93,22 @@ class ApplicationService:
                 selectinload(Application.resume_version),
                 selectinload(Application.status_history),
             )
+            .filter(Application.user_id == user_id)
             .order_by(Application.created_at.desc())
             .all()
         )
 
     @staticmethod
-    def update_application(db: Session, app_id: int, data: ApplicationUpdate) -> Application:
+    def update_application(db: Session, app_id: int, user_id: int, data: ApplicationUpdate) -> Application:
         """
         Updates application status, notes, or applied_at.
         Records an immutable ApplicationStatusHistory entry on status transitions.
         """
-        app = db.query(Application).filter(Application.id == app_id).first()
+        app = (
+            db.query(Application)
+            .filter(Application.id == app_id, Application.user_id == user_id)
+            .first()
+        )
         if not app:
             raise EntityNotFoundException("Application", app_id)
 
@@ -125,11 +135,15 @@ class ApplicationService:
             app.notes = data.notes
 
         db.commit()
-        return ApplicationService.get_application(db, app.id)
+        return ApplicationService.get_application(db, app.id, user_id=user_id)
 
     @staticmethod
-    def delete_application(db: Session, app_id: int) -> None:
-        app = db.query(Application).filter(Application.id == app_id).first()
+    def delete_application(db: Session, app_id: int, user_id: int) -> None:
+        app = (
+            db.query(Application)
+            .filter(Application.id == app_id, Application.user_id == user_id)
+            .first()
+        )
         if not app:
             raise EntityNotFoundException("Application", app_id)
         db.delete(app)

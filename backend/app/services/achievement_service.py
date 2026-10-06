@@ -1,6 +1,6 @@
 from datetime import date as dt_date
 from typing import Any, Dict, List, Optional, Union
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import EntityNotFoundException, ValidationException
@@ -23,21 +23,30 @@ def _parse_date(raw_date: Any) -> Optional[dt_date]:
 
 class AchievementService:
     @staticmethod
-    def get_all(db: Session, skip: int = 0, limit: int = 100) -> List[Achievement]:
-        stmt = select(Achievement).order_by(Achievement.created_at.desc()).offset(skip).limit(limit)
+    def get_all(db: Session, user_id: int, skip: int = 0, limit: int = 100) -> List[Achievement]:
+        stmt = (
+            select(Achievement)
+            .where(Achievement.user_id == user_id)
+            .order_by(Achievement.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
         return list(db.scalars(stmt).all())
 
     @staticmethod
-    def get_by_id(db: Session, achievement_id: int) -> Achievement:
-        stmt = select(Achievement).where(Achievement.id == achievement_id)
+    def get_by_id(db: Session, achievement_id: int, user_id: int) -> Achievement:
+        stmt = select(Achievement).where(
+            and_(Achievement.id == achievement_id, Achievement.user_id == user_id)
+        )
         achievement = db.scalar(stmt)
         if not achievement:
             raise EntityNotFoundException("Achievement", achievement_id)
         return achievement
 
     @staticmethod
-    def create(db: Session, data: AchievementCreate) -> Achievement:
+    def create(db: Session, user_id: int, data: AchievementCreate) -> Achievement:
         achievement = Achievement(
+            user_id=user_id,
             title=data.title.strip(),
             description=data.description,
             date=_parse_date(data.date),
@@ -48,8 +57,8 @@ class AchievementService:
         return achievement
 
     @staticmethod
-    def update(db: Session, achievement_id: int, data: AchievementUpdate) -> Achievement:
-        achievement = AchievementService.get_by_id(db, achievement_id)
+    def update(db: Session, achievement_id: int, user_id: int, data: AchievementUpdate) -> Achievement:
+        achievement = AchievementService.get_by_id(db, achievement_id, user_id)
         if data.title is not None:
             achievement.title = data.title.strip()
         if data.description is not None:
@@ -62,14 +71,15 @@ class AchievementService:
         return achievement
 
     @staticmethod
-    def delete(db: Session, achievement_id: int) -> None:
-        achievement = AchievementService.get_by_id(db, achievement_id)
+    def delete(db: Session, achievement_id: int, user_id: int) -> None:
+        achievement = AchievementService.get_by_id(db, achievement_id, user_id)
         db.delete(achievement)
         db.commit()
 
     @staticmethod
     def resolve_or_create_multiple(
         db: Session,
+        user_id: int,
         items: List[Union[int, AchievementLinkOrCreate, Dict[str, Any], str]]
     ) -> List[Achievement]:
         result: List[Achievement] = []
@@ -78,21 +88,22 @@ class AchievementService:
         for item in items:
             achievement: Achievement
             if isinstance(item, int):
-                achievement = AchievementService.get_by_id(db, item)
+                achievement = AchievementService.get_by_id(db, item, user_id)
             elif isinstance(item, str) and item.isdigit():
-                achievement = AchievementService.get_by_id(db, int(item))
+                achievement = AchievementService.get_by_id(db, int(item), user_id)
             elif isinstance(item, str):
                 title = item.strip()
                 if not title:
                     continue
-                achievement = Achievement(title=title)
+                achievement = Achievement(user_id=user_id, title=title)
                 db.add(achievement)
                 db.flush()
             elif isinstance(item, AchievementLinkOrCreate):
                 if item.id is not None:
-                    achievement = AchievementService.get_by_id(db, item.id)
+                    achievement = AchievementService.get_by_id(db, item.id, user_id)
                 elif item.title:
                     achievement = Achievement(
+                        user_id=user_id,
                         title=item.title.strip(),
                         description=item.description,
                         date=_parse_date(item.date),
@@ -103,9 +114,10 @@ class AchievementService:
                     raise ValidationException("Achievement must provide an id or title")
             elif isinstance(item, dict):
                 if item.get("id") is not None:
-                    achievement = AchievementService.get_by_id(db, int(item["id"]))
+                    achievement = AchievementService.get_by_id(db, int(item["id"]), user_id)
                 elif item.get("title"):
                     achievement = Achievement(
+                        user_id=user_id,
                         title=item["title"].strip(),
                         description=item.get("description"),
                         date=_parse_date(item.get("date")),

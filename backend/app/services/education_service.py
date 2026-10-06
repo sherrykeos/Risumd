@@ -1,5 +1,5 @@
 from typing import List
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import EntityNotFoundException
@@ -9,21 +9,30 @@ from app.schemas.education import EducationCreate, EducationUpdate
 
 class EducationService:
     @staticmethod
-    def get_all(db: Session, skip: int = 0, limit: int = 100) -> List[Education]:
-        stmt = select(Education).order_by(Education.start_date.desc().nullslast()).offset(skip).limit(limit)
+    def get_all(db: Session, user_id: int, skip: int = 0, limit: int = 100) -> List[Education]:
+        stmt = (
+            select(Education)
+            .where(Education.user_id == user_id)
+            .order_by(Education.start_date.desc().nullslast())
+            .offset(skip)
+            .limit(limit)
+        )
         return list(db.scalars(stmt).all())
 
     @staticmethod
-    def get_by_id(db: Session, education_id: int) -> Education:
-        stmt = select(Education).where(Education.id == education_id)
+    def get_by_id(db: Session, education_id: int, user_id: int) -> Education:
+        stmt = select(Education).where(
+            and_(Education.id == education_id, Education.user_id == user_id)
+        )
         education = db.scalar(stmt)
         if not education:
             raise EntityNotFoundException("Education", education_id)
         return education
 
     @staticmethod
-    def create(db: Session, data: EducationCreate) -> Education:
+    def create(db: Session, user_id: int, data: EducationCreate) -> Education:
         education = Education(
+            user_id=user_id,
             institution=data.institution.strip(),
             degree=data.degree.strip(),
             field=data.field.strip() if data.field else None,
@@ -38,8 +47,8 @@ class EducationService:
         return education
 
     @staticmethod
-    def update(db: Session, education_id: int, data: EducationUpdate) -> Education:
-        education = EducationService.get_by_id(db, education_id)
+    def update(db: Session, education_id: int, user_id: int, data: EducationUpdate) -> Education:
+        education = EducationService.get_by_id(db, education_id, user_id)
         if data.institution is not None:
             education.institution = data.institution.strip()
         if data.degree is not None:
@@ -60,8 +69,8 @@ class EducationService:
         return education
 
     @staticmethod
-    def delete(db: Session, education_id: int) -> None:
-        education = EducationService.get_by_id(db, education_id)
+    def delete(db: Session, education_id: int, user_id: int) -> None:
+        education = EducationService.get_by_id(db, education_id, user_id)
         db.delete(education)
         db.commit()
 

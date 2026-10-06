@@ -1,5 +1,5 @@
 from typing import List
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import EntityNotFoundException
@@ -12,9 +12,10 @@ from app.services.achievement_service import achievement_service
 
 class ProjectService:
     @staticmethod
-    def get_all(db: Session, skip: int = 0, limit: int = 100) -> List[Project]:
+    def get_all(db: Session, user_id: int, skip: int = 0, limit: int = 100) -> List[Project]:
         stmt = (
             select(Project)
+            .where(Project.user_id == user_id)
             .order_by(Project.start_date.desc().nullslast(), Project.created_at.desc())
             .offset(skip)
             .limit(limit)
@@ -22,16 +23,19 @@ class ProjectService:
         return list(db.scalars(stmt).all())
 
     @staticmethod
-    def get_by_id(db: Session, project_id: int) -> Project:
-        stmt = select(Project).where(Project.id == project_id)
+    def get_by_id(db: Session, project_id: int, user_id: int) -> Project:
+        stmt = select(Project).where(
+            and_(Project.id == project_id, Project.user_id == user_id)
+        )
         project = db.scalar(stmt)
         if not project:
             raise EntityNotFoundException("Project", project_id)
         return project
 
     @staticmethod
-    def create(db: Session, data: ProjectCreate) -> Project:
+    def create(db: Session, user_id: int, data: ProjectCreate) -> Project:
         project = Project(
+            user_id=user_id,
             name=data.name.strip(),
             description=data.description,
             role=data.role.strip() if data.role else None,
@@ -43,21 +47,21 @@ class ProjectService:
         db.add(project)
 
         if data.technologies:
-            project.technologies = technology_service.get_or_create_multiple(db, data.technologies)
+            project.technologies = technology_service.get_or_create_multiple(db, user_id, data.technologies)
 
         if data.skills:
-            project.skills = skill_service.get_or_create_multiple(db, data.skills)
+            project.skills = skill_service.get_or_create_multiple(db, user_id, data.skills)
 
         if data.achievements:
-            project.achievements = achievement_service.resolve_or_create_multiple(db, data.achievements)
+            project.achievements = achievement_service.resolve_or_create_multiple(db, user_id, data.achievements)
 
         db.commit()
         db.refresh(project)
         return project
 
     @staticmethod
-    def update(db: Session, project_id: int, data: ProjectUpdate) -> Project:
-        project = ProjectService.get_by_id(db, project_id)
+    def update(db: Session, project_id: int, user_id: int, data: ProjectUpdate) -> Project:
+        project = ProjectService.get_by_id(db, project_id, user_id)
 
         if data.name is not None:
             project.name = data.name.strip()
@@ -75,21 +79,21 @@ class ProjectService:
             project.live_url = data.live_url
 
         if data.technologies is not None:
-            project.technologies = technology_service.get_or_create_multiple(db, data.technologies)
+            project.technologies = technology_service.get_or_create_multiple(db, user_id, data.technologies)
 
         if data.skills is not None:
-            project.skills = skill_service.get_or_create_multiple(db, data.skills)
+            project.skills = skill_service.get_or_create_multiple(db, user_id, data.skills)
 
         if data.achievements is not None:
-            project.achievements = achievement_service.resolve_or_create_multiple(db, data.achievements)
+            project.achievements = achievement_service.resolve_or_create_multiple(db, user_id, data.achievements)
 
         db.commit()
         db.refresh(project)
         return project
 
     @staticmethod
-    def delete(db: Session, project_id: int) -> None:
-        project = ProjectService.get_by_id(db, project_id)
+    def delete(db: Session, project_id: int, user_id: int) -> None:
+        project = ProjectService.get_by_id(db, project_id, user_id)
         db.delete(project)
         db.commit()
 

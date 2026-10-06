@@ -12,18 +12,19 @@ def test_full_risumd_end_to_end_mvp_workflow(client, db_session):
     # ----------------------------------------------------
     # Step 0: Populate Career Vault with rich evidence
     # ----------------------------------------------------
-    py = Technology(name="Python")
-    fa = Technology(name="FastAPI")
-    pg = Technology(name="PostgreSQL")
-    docker = Technology(name="Docker")
+    py = Technology(user_id=1, name="Python")
+    fa = Technology(user_id=1, name="FastAPI")
+    pg = Technology(user_id=1, name="PostgreSQL")
+    docker = Technology(user_id=1, name="Docker")
 
-    sys_design = Skill(name="System Design", category="Core Skills")
-    rest_api = Skill(name="REST API Design", category="Core Skills")
+    sys_design = Skill(user_id=1, name="System Design", category="Core Skills")
+    rest_api = Skill(user_id=1, name="REST API Design", category="Core Skills")
 
-    ach1 = Achievement(title="Optimized database queries reducing latency by 40%", description="40% latency reduction")
-    ach2 = Achievement(title="Built REST microservice handling 5M daily requests", description="5M daily requests")
+    ach1 = Achievement(user_id=1, title="Optimized database queries reducing latency by 40%", description="40% latency reduction")
+    ach2 = Achievement(user_id=1, title="Built REST microservice handling 5M daily requests", description="5M daily requests")
 
     proj1 = Project(
+        user_id=1,
         name="High Performance Gateway",
         description="Engineered API gateway in FastAPI",
         role="Lead Architect",
@@ -33,6 +34,7 @@ def test_full_risumd_end_to_end_mvp_workflow(client, db_session):
     )
 
     exp1 = Experience(
+        user_id=1,
         company="Stripe",
         role="Senior Backend Engineer",
         description="Developed core payment processing services",
@@ -42,6 +44,7 @@ def test_full_risumd_end_to_end_mvp_workflow(client, db_session):
     )
 
     edu1 = Education(
+        user_id=1,
         institution="Stanford University",
         degree="B.S. Computer Science",
         field="Computer Science",

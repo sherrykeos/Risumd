@@ -19,22 +19,22 @@ from app.resume.schemas import ResumeGenerateRequest
 
 
 def test_compose_resume_deterministic_selection_and_limits(db_session):
-    py_tech = Technology(name="Python")
-    fa_tech = Technology(name="FastAPI")
-    pg_tech = Technology(name="PostgreSQL")
-    docker_tech = Technology(name="Docker")
+    py_tech = Technology(user_id=1, name="Python")
+    fa_tech = Technology(user_id=1, name="FastAPI")
+    pg_tech = Technology(user_id=1, name="PostgreSQL")
+    docker_tech = Technology(user_id=1, name="Docker")
 
-    proj1 = Project(name="Project Alpha", description="Built a FastAPI backend", technologies=[py_tech, fa_tech])
-    proj2 = Project(name="Project Beta", description="Built a PostgreSQL database engine", technologies=[pg_tech])
-    proj3 = Project(name="Project Gamma", description="Built a Docker deployment script", technologies=[docker_tech])
-    proj4 = Project(name="Project Delta", description="Built an unrelated utility")
+    proj1 = Project(user_id=1, name="Project Alpha", description="Built a FastAPI backend", technologies=[py_tech, fa_tech])
+    proj2 = Project(user_id=1, name="Project Beta", description="Built a PostgreSQL database engine", technologies=[pg_tech])
+    proj3 = Project(user_id=1, name="Project Gamma", description="Built a Docker deployment script", technologies=[docker_tech])
+    proj4 = Project(user_id=1, name="Project Delta", description="Built an unrelated utility")
 
-    exp1 = Experience(company="Acme Corp", role="Senior Backend Engineer", description="Led backend team", technologies=[py_tech, fa_tech])
-    exp2 = Experience(company="Beta Inc", role="Software Engineer", description="Maintained databases", technologies=[pg_tech])
+    exp1 = Experience(user_id=1, company="Acme Corp", role="Senior Backend Engineer", description="Led backend team", technologies=[py_tech, fa_tech])
+    exp2 = Experience(user_id=1, company="Beta Inc", role="Software Engineer", description="Maintained databases", technologies=[pg_tech])
 
-    edu1 = Education(institution="Tech University", degree="BS Computer Science")
+    edu1 = Education(user_id=1, institution="Tech University", degree="BS Computer Science")
 
-    job = Job(company="Target Co", title="Lead Python Engineer", raw_description="Looking for Python and FastAPI expert.")
+    job = Job(user_id=1, company="Target Co", title="Lead Python Engineer", raw_description="Looking for Python and FastAPI expert.")
 
     db_session.add_all([py_tech, fa_tech, pg_tech, docker_tech, proj1, proj2, proj3, proj4, exp1, exp2, edu1, job])
     db_session.commit()

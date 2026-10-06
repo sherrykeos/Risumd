@@ -6,7 +6,7 @@ from app.services.resume_service import resume_service
 
 
 def _setup_job_and_resume(db_session, job_company="Test Corp"):
-    job = Job(company=job_company, title="Backend Engineer", raw_description="Job description")
+    job = Job(user_id=1, company=job_company, title="Backend Engineer", raw_description="Job description")
     db_session.add(job)
     db_session.commit()
 
@@ -14,7 +14,7 @@ def _setup_job_and_resume(db_session, job_company="Test Corp"):
     db_session.add(jd_analysis)
     db_session.commit()
 
-    version = resume_service.generate_resume(db=db_session, job_id=job.id, skip_ai=True)
+    version = resume_service.generate_resume(db=db_session, job_id=job.id, user_id=1, skip_ai=True)
     return job, version
 
 

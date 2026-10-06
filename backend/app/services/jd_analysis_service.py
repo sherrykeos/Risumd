@@ -15,9 +15,9 @@ from app.ai.jd_analyzer import analyze_job_description
 
 class JDAnalysisService:
     @staticmethod
-    def get_by_job_id(db: Session, job_id: int) -> JDAnalysis:
-        # Validate that the parent job exists
-        job_service.get_by_id(db, job_id)
+    def get_by_job_id(db: Session, job_id: int, user_id: int) -> JDAnalysis:
+        # Validate that the parent job exists and belongs to user
+        job_service.get_by_id(db, job_id, user_id)
 
         stmt = select(JDAnalysis).where(JDAnalysis.job_id == job_id)
         analysis = db.scalar(stmt)
@@ -26,9 +26,9 @@ class JDAnalysisService:
         return analysis
 
     @staticmethod
-    def create(db: Session, job_id: int, data: JDAnalysisCreate) -> JDAnalysis:
-        # Validate that the parent job exists
-        job_service.get_by_id(db, job_id)
+    def create(db: Session, job_id: int, user_id: int, data: JDAnalysisCreate) -> JDAnalysis:
+        # Validate that the parent job exists and belongs to user
+        job_service.get_by_id(db, job_id, user_id)
 
         # Enforce one analysis per job
         stmt = select(JDAnalysis).where(JDAnalysis.job_id == job_id)
@@ -53,8 +53,8 @@ class JDAnalysisService:
         return analysis
 
     @staticmethod
-    def update(db: Session, job_id: int, data: JDAnalysisUpdate) -> JDAnalysis:
-        analysis = JDAnalysisService.get_by_job_id(db, job_id)
+    def update(db: Session, job_id: int, user_id: int, data: JDAnalysisUpdate) -> JDAnalysis:
+        analysis = JDAnalysisService.get_by_job_id(db, job_id, user_id)
 
         if data.seniority is not None:
             analysis.seniority = data.seniority.strip() if data.seniority else None
@@ -78,12 +78,12 @@ class JDAnalysisService:
         return analysis
 
     @staticmethod
-    def generate_analysis(db: Session, job_id: int) -> JDAnalysis:
+    def generate_analysis(db: Session, job_id: int, user_id: int) -> JDAnalysis:
         """
         Uses Gemini to extract structured analysis from the Job's raw_description.
         Creates a new JDAnalysis or updates the existing one in-place.
         """
-        job = job_service.get_by_id(db, job_id)
+        job = job_service.get_by_id(db, job_id, user_id)
         if not job.raw_description or not job.raw_description.strip():
             raise ValidationException(f"Job with id '{job_id}' has an empty raw_description.")
 
@@ -94,6 +94,7 @@ class JDAnalysisService:
             return JDAnalysisService.update(
                 db,
                 job_id,
+                user_id,
                 JDAnalysisUpdate(
                     seniority=analysis_data.seniority,
                     domain=analysis_data.domain,
@@ -107,14 +108,13 @@ class JDAnalysisService:
             )
         else:
             # Create new analysis
-            return JDAnalysisService.create(db, job_id, analysis_data)
+            return JDAnalysisService.create(db, job_id, user_id, analysis_data)
 
     @staticmethod
-    def delete(db: Session, job_id: int) -> None:
-        analysis = JDAnalysisService.get_by_job_id(db, job_id)
+    def delete(db: Session, job_id: int, user_id: int) -> None:
+        analysis = JDAnalysisService.get_by_job_id(db, job_id, user_id)
         db.delete(analysis)
         db.commit()
 
 
 jd_analysis_service = JDAnalysisService()
-

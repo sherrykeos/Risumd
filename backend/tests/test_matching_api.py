@@ -14,6 +14,7 @@ from app.models.achievement import Achievement
 def test_get_matches_valid_job_and_analysis(client: TestClient, db_session: Session):
     # 1. Create Job + JDAnalysis
     job = Job(
+        user_id=1,
         company="Acme Cloud",
         title="Senior Backend Engineer",
         raw_description="Looking for a Python and PostgreSQL backend engineer.",
@@ -35,16 +36,17 @@ def test_get_matches_valid_job_and_analysis(client: TestClient, db_session: Sess
     db_session.add(analysis)
 
     # 2. Add Career Vault items
-    tech_py = Technology(name="Python")
-    tech_pg = Technology(name="PostgreSQL")
-    tech_react = Technology(name="React")
-    skill_arch = Skill(name="Backend Architecture", category="Engineering")
-    skill_ui = Skill(name="UI Design", category="Design")
+    tech_py = Technology(user_id=1, name="Python")
+    tech_pg = Technology(user_id=1, name="PostgreSQL")
+    tech_react = Technology(user_id=1, name="React")
+    skill_arch = Skill(user_id=1, name="Backend Architecture", category="Engineering")
+    skill_ui = Skill(user_id=1, name="UI Design", category="Design")
     db_session.add_all([tech_py, tech_pg, tech_react, skill_arch, skill_ui])
     db_session.flush()
 
     # Highly relevant project
     proj1 = Project(
+        user_id=1,
         name="Scalable Microservices Platform",
         role="Lead Backend Engineer",
         description="Built low-latency microservices with Python and PostgreSQL",
@@ -53,6 +55,7 @@ def test_get_matches_valid_job_and_analysis(client: TestClient, db_session: Sess
     )
     # Unrelated project
     proj2 = Project(
+        user_id=1,
         name="Front-end Dashboard",
         role="UI Designer",
         description="React UI dashboard with styled components",
@@ -98,6 +101,7 @@ def test_get_matches_missing_job_returns_404(client: TestClient):
 def test_get_matches_missing_analysis_returns_400(client: TestClient, db_session: Session):
     # Create job with NO analysis
     job = Job(
+        user_id=1,
         company="Startup Co",
         title="Full Stack Developer",
         raw_description="Looking for a full stack engineer.",
@@ -113,6 +117,7 @@ def test_get_matches_missing_analysis_returns_400(client: TestClient, db_session
 def test_get_matches_empty_career_vault_handled_gracefully(client: TestClient, db_session: Session):
     # Job + Analysis, but Career Vault is completely empty
     job = Job(
+        user_id=1,
         company="Empty Vault Tech",
         title="Software Engineer",
         raw_description="Software engineer role.",

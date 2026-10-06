@@ -47,17 +47,24 @@ def compose_resume(
     """
     Deterministically selects relevant Career Vault items using matching engine scores,
     constructs a strongly-typed factual draft, and refines wording with Gemini (or fallback).
+    All data is strictly scoped to the owner of the target job.
     """
+    owner = getattr(job, "user", None)
+    owner_name = owner.name if owner and owner.name else settings.DEFAULT_CANDIDATE_NAME
+    owner_email = owner.email if owner and owner.email else settings.DEFAULT_CANDIDATE_EMAIL
+
     # 1. Contact Information
     contact = ContactInfo(
-        name=(overrides and overrides.name) or settings.DEFAULT_CANDIDATE_NAME,
-        email=(overrides and overrides.email) or settings.DEFAULT_CANDIDATE_EMAIL,
+        name=(overrides and overrides.name) or owner_name,
+        email=(overrides and overrides.email) or owner_email,
         phone=(overrides and overrides.phone) or settings.DEFAULT_CANDIDATE_PHONE,
         location=(overrides and overrides.location) or settings.DEFAULT_CANDIDATE_LOCATION,
         github=(overrides and overrides.github) or settings.DEFAULT_CANDIDATE_GITHUB,
         linkedin=(overrides and overrides.linkedin) or settings.DEFAULT_CANDIDATE_LINKEDIN,
         portfolio=(overrides and overrides.portfolio) or settings.DEFAULT_CANDIDATE_PORTFOLIO,
     )
+
+    user_id = job.user_id
 
     # 2. Select Projects
     selected_project_ids = [p.id for p in matches.projects[:MAX_PROJECTS]]
@@ -70,7 +77,7 @@ def compose_resume(
                 selectinload(Project.technologies),
                 selectinload(Project.achievements),
             )
-            .filter(Project.id.in_(selected_project_ids))
+            .filter(Project.id.in_(selected_project_ids), Project.user_id == user_id)
             .all()
         )
         # Preserve rank order
@@ -116,7 +123,7 @@ def compose_resume(
                 selectinload(Experience.technologies),
                 selectinload(Experience.achievements),
             )
-            .filter(Experience.id.in_(selected_exp_ids))
+            .filter(Experience.id.in_(selected_exp_ids), Experience.user_id == user_id)
             .all()
         )
         exp_map = {e.id: e for e in db_experiences}
@@ -160,7 +167,12 @@ def compose_resume(
         skill_groups.append(ResumeSkillGroup(category="Technologies & Frameworks", skills=tech_names))
 
     # 5. Select Education
-    db_education = db.query(Education).order_by(Education.end_date.desc().nullslast(), Education.start_date.desc().nullslast()).all()
+    db_education = (
+        db.query(Education)
+        .filter(Education.user_id == user_id)
+        .order_by(Education.end_date.desc().nullslast(), Education.start_date.desc().nullslast())
+        .all()
+    )
     resume_education = [
         ResumeEducationItem(
             id=edu.id,

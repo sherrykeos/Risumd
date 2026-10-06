@@ -27,6 +27,7 @@ MOCK_ANALYSIS_DATA = JDAnalysisCreate(
 
 def test_generate_analysis_success(client: TestClient, db_session: Session):
     job = Job(
+        user_id=1,
         company="Aurora Cloud",
         title="Lead Cloud Architect",
         raw_description="We are seeking a Lead Cloud Architect with deep knowledge of Kubernetes and Go.",
@@ -55,6 +56,7 @@ def test_generate_analysis_success(client: TestClient, db_session: Session):
 def test_generate_analysis_updates_existing_in_place(client: TestClient, db_session: Session):
     # Job with an existing analysis
     job = Job(
+        user_id=1,
         company="Apex Systems",
         title="Systems Engineer",
         raw_description="Systems Engineer job description.",
@@ -100,6 +102,7 @@ def test_generate_analysis_missing_job_returns_404(client: TestClient):
 
 def test_generate_analysis_empty_raw_description_returns_422(client: TestClient, db_session: Session):
     job = Job(
+        user_id=1,
         company="Blank Co",
         title="Empty Description Role",
         raw_description="",
@@ -114,6 +117,7 @@ def test_generate_analysis_empty_raw_description_returns_422(client: TestClient,
 
 def test_generate_analysis_missing_api_key_returns_500(client: TestClient, db_session: Session):
     job = Job(
+        user_id=1,
         company="Cloud Corp",
         title="Backend Engineer",
         raw_description="Valid job description for backend engineer.",
@@ -133,6 +137,7 @@ def test_generate_analysis_missing_api_key_returns_500(client: TestClient, db_se
 
 def test_generate_analysis_provider_error_returns_502(client: TestClient, db_session: Session):
     job = Job(
+        user_id=1,
         company="Cloud Corp",
         title="Backend Engineer",
         raw_description="Valid job description for backend engineer.",
@@ -153,6 +158,7 @@ def test_generate_analysis_provider_error_returns_502(client: TestClient, db_ses
 def test_generate_analysis_then_matches_pipeline(client: TestClient, db_session: Session):
     # End-to-end integration: Generate analysis -> matching engine
     job = Job(
+        user_id=1,
         company="Fintech Dynamics",
         title="Platform Engineer",
         raw_description="Platform role requiring Kubernetes, Docker, and Python.",
@@ -161,12 +167,13 @@ def test_generate_analysis_then_matches_pipeline(client: TestClient, db_session:
     db_session.flush()
 
     # Add matching Career Vault project
-    tech_k8s = Technology(name="Kubernetes")
-    tech_py = Technology(name="Python")
+    tech_k8s = Technology(user_id=1, name="Kubernetes")
+    tech_py = Technology(user_id=1, name="Python")
     db_session.add_all([tech_k8s, tech_py])
     db_session.flush()
 
     proj = Project(
+        user_id=1,
         name="Container Orchestration Platform",
         role="DevOps Lead",
         description="Built internal developer platform with Kubernetes and Python",

@@ -48,6 +48,10 @@ if (
         f"matches development database. Tests must use a separate database (e.g. risumd_test)."
     )
 
+from app.api.deps import get_current_user
+from app.models.user import User
+from app.models.session import UserSession
+
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
 
@@ -63,7 +67,8 @@ app.dependency_overrides[get_db] = override_get_db
 
 # Tables to truncate between tests (in proper cascade order)
 TRUNCATE_QUERY = text(
-    "TRUNCATE TABLE projects, experiences, skills, technologies, achievements, education, "
+    "TRUNCATE TABLE users, user_sessions, "
+    "projects, experiences, skills, technologies, achievements, education, "
     "project_skills, project_technologies, project_achievements, "
     "experience_skills, experience_technologies, experience_achievements, "
     "jobs, jd_analyses, resume_versions, applications, application_status_history "
@@ -73,28 +78,61 @@ TRUNCATE_QUERY = text(
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_database():
-    """Create all tables in the test database once for the session."""
-    Base.metadata.create_all(bind=test_engine)
+    """Ensure test database is initialized."""
     yield
-    # Optionally drop after session if desired, or keep structure for speed
-    # Base.metadata.drop_all(bind=test_engine)
 
+
+# Ensure mock Google credentials for testing OAuth routes
+if not settings.GOOGLE_CLIENT_ID:
+    settings.GOOGLE_CLIENT_ID = "mock_test_google_client_id"
+if not settings.GOOGLE_CLIENT_SECRET:
+    settings.GOOGLE_CLIENT_SECRET = "mock_test_google_client_secret"
 
 @pytest.fixture(scope="function")
 def db_session():
-    """Provides a clean database session per test function with truncated tables."""
+    """Provides a clean database session per test function with truncated tables and a default test user."""
     with test_engine.begin() as conn:
         conn.execute(TRUNCATE_QUERY)
 
     session = TestingSessionLocal()
     try:
+        # Create default test user (PostgreSQL sequence assigns id=1)
+        default_user = User(
+            google_sub="test_google_sub_default",
+            email="testuser@example.com",
+            name="Test User",
+            avatar_url="https://example.com/avatar.png",
+        )
+        session.add(default_user)
+        session.commit()
+        session.refresh(default_user)
         yield session
     finally:
         session.close()
 
 
 @pytest.fixture(scope="function")
-def client(db_session):
-    """Provides a TestClient with a clean database per test."""
+def default_user(db_session):
+    return db_session.query(User).filter(User.google_sub == "test_google_sub_default").first()
+
+
+@pytest.fixture(scope="function")
+def client(db_session, default_user):
+    """Provides a TestClient authenticated as default_user."""
+    def override_get_current_user():
+        return default_user
+
+    app.dependency_overrides[get_current_user] = override_get_current_user
     with TestClient(app) as c:
         yield c
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+@pytest.fixture(scope="function")
+def unauthenticated_client(db_session):
+    """Provides a TestClient with no auth dependency override (will require valid session cookie)."""
+    app.dependency_overrides.pop(get_current_user, None)
+    with TestClient(app) as c:
+        yield c
+
+

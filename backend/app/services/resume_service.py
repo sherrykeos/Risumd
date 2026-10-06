@@ -22,14 +22,16 @@ class ResumeService:
     def generate_resume(
         db: Session,
         job_id: int,
+        user_id: int,
         overrides: Optional[ResumeGenerateRequest] = None,
         skip_ai: bool = False,
     ) -> ResumeVersion:
         """
         Orchestrates full resume generation pipeline:
         Job -> JDAnalysis -> Matching -> Composition -> AI Refinement -> LaTeX -> PDF -> ResumeVersion
+        Strictly scoped to the authenticated user.
         """
-        job = db.query(Job).filter(Job.id == job_id).first()
+        job = db.query(Job).filter(Job.id == job_id, Job.user_id == user_id).first()
         if not job:
             raise EntityNotFoundException("Job", job_id)
 
@@ -39,13 +41,13 @@ class ResumeService:
         # Calculate version number (increment max or start at 1)
         max_ver = (
             db.query(func.max(ResumeVersion.version_number))
-            .filter(ResumeVersion.job_id == job_id)
+            .filter(ResumeVersion.job_id == job_id, ResumeVersion.user_id == user_id)
             .scalar()
         ) or 0
         next_version_number = max_ver + 1
 
-        # 1. Fetch matches from deterministic matching engine
-        matches: JobMatchResponse = matching_service.get_job_matches(db, job_id)
+        # 1. Fetch matches from deterministic matching engine (scoped to user)
+        matches: JobMatchResponse = matching_service.get_job_matches(db, job_id, user_id)
 
         # 2. Compose structured resume data
         resume_data = compose_resume(
@@ -61,7 +63,7 @@ class ResumeService:
         latex_source = render_latex(resume_data)
 
         # 4. Storage directory setup
-        version_dir = settings.STORAGE_DIR / "resumes" / f"job_{job_id}_v{next_version_number}"
+        version_dir = settings.STORAGE_DIR / "resumes" / f"user_{user_id}_job_{job_id}_v{next_version_number}"
 
         # 5. Compile PDF (raises LaTeXCompilationError if compilation fails)
         pdf_path_str: Optional[str] = None
@@ -75,6 +77,7 @@ class ResumeService:
         # 6. Save ResumeVersion record to DB
         resume_version = ResumeVersion(
             job_id=job.id,
+            user_id=user_id,
             version_number=next_version_number,
             resume_data=resume_data.model_dump(),
             latex_source=latex_source,
@@ -87,24 +90,26 @@ class ResumeService:
         return resume_version
 
     @staticmethod
-    def get_resume(db: Session, resume_id: int) -> ResumeVersion:
-        resume = db.query(ResumeVersion).filter(ResumeVersion.id == resume_id).first()
+    def get_resume(db: Session, resume_id: int, user_id: int) -> ResumeVersion:
+        resume = (
+            db.query(ResumeVersion)
+            .filter(ResumeVersion.id == resume_id, ResumeVersion.user_id == user_id)
+            .first()
+        )
         if not resume:
             raise EntityNotFoundException("ResumeVersion", resume_id)
         return resume
 
     @staticmethod
-    def list_resumes(db: Session, job_id: Optional[int] = None) -> List[ResumeVersion]:
-        query = db.query(ResumeVersion)
+    def list_resumes(db: Session, user_id: int, job_id: Optional[int] = None) -> List[ResumeVersion]:
+        query = db.query(ResumeVersion).filter(ResumeVersion.user_id == user_id)
         if job_id is not None:
             query = query.filter(ResumeVersion.job_id == job_id)
         return query.order_by(ResumeVersion.created_at.desc(), ResumeVersion.version_number.desc()).all()
 
     @staticmethod
-    def get_resume_pdf_path(db: Session, resume_id: int) -> Path:
-        resume = db.query(ResumeVersion).filter(ResumeVersion.id == resume_id).first()
-        if not resume:
-            raise EntityNotFoundException("ResumeVersion", resume_id)
+    def get_resume_pdf_path(db: Session, resume_id: int, user_id: int) -> Path:
+        resume = ResumeService.get_resume(db, resume_id=resume_id, user_id=user_id)
 
         if not resume.pdf_path:
             raise FileNotFoundError(f"PDF file has not been generated for resume version {resume_id}")

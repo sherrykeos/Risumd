@@ -19,15 +19,15 @@ from app.matching.scorer import (
 
 class MatchingService:
     @staticmethod
-    def get_job_matches(db: Session, job_id: int) -> JobMatchResponse:
+    def get_job_matches(db: Session, job_id: int, user_id: int) -> JobMatchResponse:
         """
         Calculates on-demand deterministic relevance scores and rankings
-        between a target Job + JDAnalysis and the user's Career Vault.
+        between a target Job + JDAnalysis and the authenticated user's Career Vault only.
         """
         job = (
             db.query(Job)
             .options(selectinload(Job.analysis))
-            .filter(Job.id == job_id)
+            .filter(Job.id == job_id, Job.user_id == user_id)
             .first()
         )
         if not job:
@@ -36,7 +36,7 @@ class MatchingService:
         if not job.analysis:
             raise JobAnalysisMissingException(job_id)
 
-        # Load Career Vault entities with necessary normalized relationships
+        # Load ONLY the authenticated user's Career Vault entities
         projects = (
             db.query(Project)
             .options(
@@ -44,6 +44,7 @@ class MatchingService:
                 selectinload(Project.skills),
                 selectinload(Project.achievements),
             )
+            .filter(Project.user_id == user_id)
             .all()
         )
 
@@ -54,12 +55,13 @@ class MatchingService:
                 selectinload(Experience.skills),
                 selectinload(Experience.achievements),
             )
+            .filter(Experience.user_id == user_id)
             .all()
         )
 
-        skills = db.query(Skill).all()
-        technologies = db.query(Technology).all()
-        achievements = db.query(Achievement).all()
+        skills = db.query(Skill).filter(Skill.user_id == user_id).all()
+        technologies = db.query(Technology).filter(Technology.user_id == user_id).all()
+        achievements = db.query(Achievement).filter(Achievement.user_id == user_id).all()
 
         # Deterministic scoring and ranking
         ranked_projects = rank_projects(projects, job.analysis)

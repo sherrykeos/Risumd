@@ -1,16 +1,29 @@
-# Risumd — Backend Complete MVP (Career Vault, Job Analysis, Matching, Resume Versioning, LaTeX/PDF & Application Tracking)
+# Risumd — Backend Multi-User Foundation (Google OAuth 2.0, Career Vault, Matching, Resume Engine & PDF)
 
 Backend foundation for **Risumd**, a personal career-management and tailored-resume application.
 
-Risumd is built local-first around a single canonical source of truth: the **Career Vault**. The vault holds reusable career evidence (projects, skills, technologies, experience, education, achievements). Risumd supports an end-to-end backend workflow:
+Risumd is built around a single canonical source of truth: the **Career Vault**. The vault holds reusable career evidence (projects, skills, technologies, experience, education, achievements) strictly isolated per user. Risumd supports an end-to-end multi-user workflow:
 
 ```text
-Job → JD Analysis → Matching Engine → Resume Composition → Resume Version → LaTeX Template → PDF → Application → Status Tracking
+Google OAuth 2.0 → Secure Session Cookie → Career Vault (Isolated) → Job & Analysis → Matching Engine → Tailored Resume → PDF → Application Tracking
 ```
 
 ---
 
-## 1. Architecture & Pipeline Overview
+## 1. Authentication & Multi-User Architecture
+
+Risumd uses **Google OAuth 2.0** as its single authentication provider combined with secure, database-backed HTTP session cookies:
+
+1. **OAuth 2.0 Flow**: The user signs in with Google (`/api/auth/google/login`). Google redirects to `/api/auth/google/callback` with an authorization code and CSRF state token.
+2. **Identity Resolution**: The backend retrieves the user's stable `google_sub`, `email`, `name`, and `avatar_url`, and upserts the `User` record in PostgreSQL.
+3. **Session Management**: A cryptographically random session token (48 bytes URL-safe) is stored in the `user_sessions` table with an expiration timestamp (`expires_at`).
+4. **Secure Cookie**: The session token is transmitted in an `HttpOnly`, `SameSite=lax`, `Secure` (in production) cookie (`risumd_session`). No raw tokens or user IDs are stored in browser local storage.
+5. **FastAPI Auth Dependency**: All protected routes resolve the authenticated user via `get_current_user` dependency (`Depends(get_current_user)`).
+6. **Data Isolation & IDOR Protection**: Every SQL query across Career Vault, Jobs, Matching, Resume Generation, PDF streaming, and Applications is scoped to `current_user.id`. Cross-user access attempts result in safe `404 Not Found` responses.
+
+---
+
+## 2. Architecture & Pipeline Overview
 
 Risumd Backend follows a clean modular monolith architecture with strict separation between API routing, validation schemas, business services, LaTeX rendering, and database persistence models:
 
@@ -26,17 +39,19 @@ backend/
 │   │   └── resume_writer.py     # Grounded resume wording refinement with fallback
 │   ├── api/                     # Thin REST controllers
 │   │   ├── router.py            # Master API router
-│   │   ├── projects.py          # Project endpoints
-│   │   ├── skills.py            # Skill endpoints
-│   │   ├── technologies.py      # Technology endpoints
-│   │   ├── experience.py        # Work experience endpoints
-│   │   ├── education.py         # Education endpoints
-│   │   ├── achievements.py      # Achievement endpoints
-│   │   ├── jobs.py              # Job endpoints
-│   │   ├── jd_analysis.py       # JD Analysis endpoints (including /generate)
-│   │   ├── matches.py           # Career Matching endpoint
-│   │   ├── resumes.py           # Resume Generation, Versioning & PDF endpoints
-│   │   └── applications.py      # Application Tracking & Status History endpoints
+│   │   ├── auth.py              # Google OAuth login, callback, /me, and logout
+│   │   ├── deps.py              # get_current_user & get_current_user_optional dependencies
+│   │   ├── projects.py          # Project endpoints (user-scoped)
+│   │   ├── skills.py            # Skill endpoints (user-scoped)
+│   │   ├── technologies.py      # Technology endpoints (user-scoped)
+│   │   ├── experience.py        # Work experience endpoints (user-scoped)
+│   │   ├── education.py         # Education endpoints (user-scoped)
+│   │   ├── achievements.py      # Achievement endpoints (user-scoped)
+│   │   ├── jobs.py              # Job endpoints (user-scoped)
+│   │   ├── jd_analysis.py       # JD Analysis endpoints (user-scoped)
+│   │   ├── matches.py           # Career Matching endpoint (user-scoped)
+│   │   ├── resumes.py           # Resume Generation, Versioning & PDF endpoints (user-scoped)
+│   │   └── applications.py      # Application Tracking & Status History endpoints (user-scoped)
 │   ├── core/
 │   │   ├── config.py            # Pydantic Settings & environment configuration
 │   │   └── exceptions.py        # Domain exceptions & HTTP error response handlers
