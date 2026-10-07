@@ -133,7 +133,7 @@ export function ProjectModal({
     >
       <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
             Project Name *
           </label>
           <Input placeholder="e.g. Risumd Career Workspace" {...register('name')} error={errors.name?.message} />
@@ -141,13 +141,13 @@ export function ProjectModal({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Role
             </label>
             <Input placeholder="e.g. Lead Architect" {...register('role')} error={errors.role?.message} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               GitHub URL
             </label>
             <Input placeholder="https://github.com/..." {...register('github_url')} error={errors.github_url?.message} />
@@ -156,20 +156,20 @@ export function ProjectModal({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Live Demo / Portfolio URL
             </label>
             <Input placeholder="https://myproject.com" {...register('live_url')} error={errors.live_url?.message} />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
                 Start Date
               </label>
               <Input type="date" {...register('start_date')} error={errors.start_date?.message} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
                 End Date
               </label>
               <Input type="date" {...register('end_date')} error={errors.end_date?.message} />
@@ -178,7 +178,7 @@ export function ProjectModal({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
             Description
           </label>
           <Textarea
@@ -191,20 +191,20 @@ export function ProjectModal({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Technologies (comma-separated)
             </label>
             <Input placeholder="Next.js, FastAPI, PostgreSQL" {...register('technologies')} error={errors.technologies?.message} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Skills (comma-separated)
             </label>
             <Input placeholder="System Design, API Development" {...register('skills')} error={errors.skills?.message} />
           </div>
         </div>
 
-        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-white/[0.08]">
           <Button variant="outline" type="button" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>

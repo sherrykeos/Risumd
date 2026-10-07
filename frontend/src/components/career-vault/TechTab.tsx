@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Code } from 'lucide-react';
 
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -81,80 +80,79 @@ export function TechTab() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="p-6 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-sm">
-        Failed to load technologies: {(error as Error)?.message || 'Unknown error'}
-      </div>
-    );
-  }
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900">Technologies</h2>
-          <p className="text-xs text-slate-500">
-            Languages, frameworks, databases, libraries, and developer tools.
-          </p>
-        </div>
-        <Button onClick={handleOpenAdd} className="bg-indigo-600 hover:bg-indigo-700">
-          <Plus className="mr-2 h-4 w-4" /> Add Technology
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-[#9CA3AF]">
+          Languages, frameworks, databases, libraries, and developer tools.
+        </p>
+
+        <Button
+          onClick={handleOpenAdd}
+          className="bg-[#4D9FFF] hover:bg-[#3B8EEA] text-white text-xs font-medium h-8 px-3 rounded-[6px] shadow-none flex items-center"
+        >
+          <Plus className="mr-1.5 h-3.5 w-3.5" /> Add technology
         </Button>
       </div>
 
-      {technologies && technologies.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      {isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+      ) : isError ? (
+        <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-[8px] text-rose-400 text-xs">
+          Failed to load technologies: {(error as Error)?.message || 'Unknown error'}
+        </div>
+      ) : technologies && technologies.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
           {technologies.map((tech) => (
-            <Card key={tech.id} className="hover:border-slate-300 transition-colors">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center space-x-3 overflow-hidden">
-                  <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
-                    <Code className="h-4 w-4" />
-                  </div>
-                  <div className="truncate">
-                    <h3 className="font-semibold text-slate-900 text-sm truncate">{tech.name}</h3>
-                    {tech.description && (
-                      <p className="text-xs text-slate-500 truncate">{tech.description}</p>
-                    )}
-                  </div>
+            <div
+              key={tech.id}
+              className="bg-[#10161B] border border-white/[0.08] hover:border-white/[0.14] rounded-[8px] p-3 flex items-center justify-between transition-colors group"
+            >
+              <div className="flex items-center space-x-2.5 overflow-hidden">
+                <div className="w-7 h-7 rounded-[5px] bg-[#0B0F12] border border-white/[0.06] text-[#4D9FFF] flex items-center justify-center shrink-0">
+                  <Code className="h-3.5 w-3.5" />
                 </div>
-                <div className="flex items-center space-x-1 pl-2">
-                  <button
-                    onClick={() => handleOpenEdit(tech)}
-                    className="p-1 text-slate-400 hover:text-slate-700 rounded-md"
-                    title="Edit"
-                  >
-                    <Edit2 className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setDeletingId(tech.id)}
-                    className="p-1 text-slate-400 hover:text-rose-600 rounded-md"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                <div className="truncate">
+                  <span className="font-medium text-xs text-[#F3F4F6] block truncate">
+                    {tech.name}
+                  </span>
+                  {tech.description && (
+                    <span className="text-[11px] text-[#6B7280] block truncate">
+                      {tech.description}
+                    </span>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+
+              <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity pl-2 shrink-0">
+                <button
+                  onClick={() => handleOpenEdit(tech)}
+                  className="p-1 text-[#6B7280] hover:text-[#F3F4F6] rounded cursor-pointer"
+                  title="Edit"
+                >
+                  <Edit2 className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={() => setDeletingId(tech.id)}
+                  className="p-1 text-[#6B7280] hover:text-rose-400 rounded cursor-pointer"
+                  title="Delete"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       ) : (
-        <Card className="p-8 text-center border-dashed">
-          <p className="text-sm text-slate-500">No technologies added yet.</p>
-          <Button onClick={handleOpenAdd} variant="outline" className="mt-4">
-            <Plus className="mr-2 h-4 w-4" /> Add Technology
+        <div className="bg-[#10161B] border border-white/[0.08] rounded-[8px] p-8 text-center">
+          <p className="text-xs text-[#9CA3AF]">No technologies added yet.</p>
+          <Button onClick={handleOpenAdd} variant="outline" className="mt-3 text-xs">
+            <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Technology
           </Button>
-        </Card>
+        </div>
       )}
 
       <TechModal
@@ -166,9 +164,9 @@ export function TechTab() {
       />
 
       {errorMessage && (
-        <div className="fixed bottom-4 right-4 z-50 p-4 bg-rose-600 text-white text-sm font-medium rounded-xl shadow-lg flex items-center space-x-2">
+        <div className="fixed bottom-4 right-4 z-50 p-3 bg-rose-500 text-white text-xs font-medium rounded-[6px] shadow-lg flex items-center space-x-2">
           <span>{errorMessage}</span>
-          <button onClick={() => setErrorMessage(null)} className="ml-2 underline text-xs">
+          <button onClick={() => setErrorMessage(null)} className="ml-2 underline cursor-pointer">
             Dismiss
           </button>
         </div>

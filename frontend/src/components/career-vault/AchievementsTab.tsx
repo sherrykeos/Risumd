@@ -2,9 +2,8 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit2, Trash2, Trophy, Calendar } from 'lucide-react';
+import { Plus, MoreHorizontal, Edit2, Trash2, Trophy } from 'lucide-react';
 
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -19,6 +18,7 @@ export function AchievementsTab() {
   const [editingAch, setEditingAch] = useState<Achievement | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [actionMenuId, setActionMenuId] = useState<number | null>(null);
 
   const { data: achievements, isLoading, isError, error } = useQuery({
     queryKey: ['achievements'],
@@ -71,6 +71,7 @@ export function AchievementsTab() {
   const handleOpenEdit = (ach: Achievement) => {
     setEditingAch(ach);
     setErrorMessage(null);
+    setActionMenuId(null);
     setIsModalOpen(true);
   };
 
@@ -82,91 +83,106 @@ export function AchievementsTab() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="p-6 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-sm">
-        Failed to load achievements: {(error as Error)?.message || 'Unknown error'}
-      </div>
-    );
-  }
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900">Achievements & Honors</h2>
-          <p className="text-xs text-slate-500">
-            Awards, certifications, hackathon prizes, patents, and key career milestones.
-          </p>
-        </div>
-        <Button onClick={handleOpenAdd} className="bg-indigo-600 hover:bg-indigo-700">
-          <Plus className="mr-2 h-4 w-4" /> Add Achievement
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-[#9CA3AF]">
+          Awards, certifications, hackathon prizes, patents, and key career milestones.
+        </p>
+
+        <Button
+          onClick={handleOpenAdd}
+          className="bg-[#4D9FFF] hover:bg-[#3B8EEA] text-white text-xs font-medium h-8 px-3 rounded-[6px] shadow-none flex items-center"
+        >
+          <Plus className="mr-1.5 h-3.5 w-3.5" /> Add achievement
         </Button>
       </div>
 
-      {achievements && achievements.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {achievements.map((ach) => (
-            <Card key={ach.id} className="hover:border-slate-300 transition-colors">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3">
-                    <div className="p-2 rounded-lg bg-amber-50 text-amber-600 mt-0.5">
-                      <Trophy className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-900 text-base">{ach.title}</h3>
-                      {ach.date && (
-                        <div className="flex items-center space-x-1 text-xs text-slate-500 mt-1">
-                          <Calendar className="h-3.5 w-3.5" />
-                          <span>{formatDate(ach.date)}</span>
-                        </div>
-                      )}
-                    </div>
+      {isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+      ) : isError ? (
+        <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-[8px] text-rose-400 text-xs">
+          Failed to load achievements: {(error as Error)?.message || 'Unknown error'}
+        </div>
+      ) : achievements && achievements.length > 0 ? (
+        <div className="space-y-2.5">
+          {achievements.map((ach) => {
+            const isMenuOpen = actionMenuId === ach.id;
+
+            return (
+              <div
+                key={ach.id}
+                className="bg-[#10161B] border border-white/[0.08] hover:border-white/[0.14] rounded-[8px] p-4 flex flex-col md:flex-row md:items-start justify-between gap-4 transition-colors group"
+              >
+                <div className="flex items-start space-x-3.5 min-w-0 flex-1">
+                  <div className="w-9 h-9 rounded-[6px] bg-[#0B0F12] border border-white/[0.08] flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+                    <Trophy className="h-4 w-4" />
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <button
-                      onClick={() => handleOpenEdit(ach)}
-                      className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                      title="Edit"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => setDeletingId(ach.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+
+                  <div className="min-w-0 space-y-1">
+                    <h3 className="font-semibold text-sm text-[#F3F4F6]">{ach.title}</h3>
+
+                    {ach.date && (
+                      <p className="text-xs text-[#6B7280]">
+                        Achieved {formatDate(ach.date)}
+                      </p>
+                    )}
+
+                    {ach.description && (
+                      <p className="text-xs text-[#9CA3AF] leading-relaxed pt-1 whitespace-pre-line">
+                        {ach.description}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {ach.description && (
-                  <p className="text-sm text-slate-600 mt-3 pt-2 border-t border-slate-100 leading-relaxed">
-                    {ach.description}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                <div className="flex items-center space-x-2 self-end md:self-start shrink-0">
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setActionMenuId(isMenuOpen ? null : ach.id)}
+                      className="p-1 rounded text-[#6B7280] hover:text-[#F3F4F6] hover:bg-white/[0.06] transition-colors cursor-pointer"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+
+                    {isMenuOpen && (
+                      <div className="absolute right-0 top-full mt-1 w-28 bg-[#131A20] border border-white/[0.1] rounded-[6px] shadow-xl py-1 z-20">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(ach)}
+                          className="w-full text-left px-3 py-1.5 text-xs text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-white/[0.05] flex items-center cursor-pointer"
+                        >
+                          <Edit2 className="mr-2 h-3.5 w-3.5" /> Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeletingId(ach.id);
+                            setActionMenuId(null);
+                          }}
+                          className="w-full text-left px-3 py-1.5 text-xs text-rose-400 hover:bg-rose-500/10 flex items-center cursor-pointer"
+                        >
+                          <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
-        <Card className="p-8 text-center border-dashed">
-          <p className="text-sm text-slate-500">No achievements added yet.</p>
-          <Button onClick={handleOpenAdd} variant="outline" className="mt-4">
-            <Plus className="mr-2 h-4 w-4" /> Add Achievement
+        <div className="bg-[#10161B] border border-white/[0.08] rounded-[8px] p-8 text-center">
+          <p className="text-xs text-[#9CA3AF]">No achievements added yet.</p>
+          <Button onClick={handleOpenAdd} variant="outline" className="mt-3 text-xs">
+            <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Achievement
           </Button>
-        </Card>
+        </div>
       )}
 
       <AchievementModal
@@ -178,9 +194,9 @@ export function AchievementsTab() {
       />
 
       {errorMessage && (
-        <div className="fixed bottom-4 right-4 z-50 p-4 bg-rose-600 text-white text-sm font-medium rounded-xl shadow-lg flex items-center space-x-2">
+        <div className="fixed bottom-4 right-4 z-50 p-3 bg-rose-500 text-white text-xs font-medium rounded-[6px] shadow-lg flex items-center space-x-2">
           <span>{errorMessage}</span>
-          <button onClick={() => setErrorMessage(null)} className="ml-2 underline text-xs">
+          <button onClick={() => setErrorMessage(null)} className="ml-2 underline cursor-pointer">
             Dismiss
           </button>
         </div>

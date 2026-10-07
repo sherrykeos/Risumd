@@ -82,27 +82,27 @@ export function SkillModal({
     >
       <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
             Skill Name *
           </label>
           <Input placeholder="e.g. Distributed Systems Architecture" {...register('name')} error={errors.name?.message} />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
             Category
           </label>
           <Input placeholder="e.g. Backend, Leadership, Cloud" {...register('category')} error={errors.category?.message} />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
             Description
           </label>
           <Textarea placeholder="Optional details..." {...register('description')} error={errors.description?.message} />
         </div>
 
-        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-white/[0.08]">
           <Button variant="outline" type="button" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>

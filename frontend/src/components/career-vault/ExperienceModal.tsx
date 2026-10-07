@@ -117,13 +117,13 @@ export function ExperienceModal({
       <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Company / Organization *
             </label>
             <Input placeholder="e.g. Acme Corp" {...register('company')} error={errors.company?.message} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Job Title / Role *
             </label>
             <Input placeholder="e.g. Senior Software Engineer" {...register('role')} error={errors.role?.message} />
@@ -132,19 +132,19 @@ export function ExperienceModal({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Location
             </label>
             <Input placeholder="e.g. San Francisco, CA (Remote)" {...register('location')} error={errors.location?.message} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Start Date
             </label>
             <Input type="date" {...register('start_date')} error={errors.start_date?.message} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               End Date (Blank if current)
             </label>
             <Input type="date" {...register('end_date')} error={errors.end_date?.message} />
@@ -152,7 +152,7 @@ export function ExperienceModal({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
             Responsibilities & Accomplishments
           </label>
           <Textarea
@@ -165,20 +165,20 @@ export function ExperienceModal({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Technologies Used
             </label>
             <Input placeholder="Python, Docker, Kubernetes" {...register('technologies')} error={errors.technologies?.message} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Skills Demonstrated
             </label>
             <Input placeholder="Microservices, Performance Optimization" {...register('skills')} error={errors.skills?.message} />
           </div>
         </div>
 
-        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-white/[0.08]">
           <Button variant="outline" type="button" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>

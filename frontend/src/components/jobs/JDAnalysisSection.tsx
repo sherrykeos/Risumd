@@ -2,11 +2,9 @@
 
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Sparkles, CheckCircle2, RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, Plus } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { JDAnalysis } from '@/types';
 import { jobService } from '@/services/jobs';
 
@@ -27,179 +25,202 @@ export function JDAnalysisSection({ jobId, analysis }: JDAnalysisSectionProps) {
       setErrorMsg(null);
     },
     onError: (err: Error) => {
-      setErrorMsg(err.message || 'Gemini AI analysis failed. Please verify API configuration.');
+      setErrorMsg(err.message || 'Job description analysis failed. Please verify API configuration.');
     },
   });
 
   return (
-    <Card className="border-indigo-100">
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
+    <div className="bg-[#10161B] border border-white/[0.08] rounded-[8px] p-5 space-y-6">
+      {/* Section Header */}
+      <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.06]">
         <div>
-          <CardTitle className="flex items-center text-lg">
-            <Sparkles className="mr-2 h-5 w-5 text-indigo-600" />
-            Structured JD Analysis
-          </CardTitle>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Gemini-extracted seniority, domain, required/preferred skills, and responsibilities.
+          <h2 className="text-sm md:text-base font-semibold text-[#F3F4F6] tracking-tight">
+            JD Analysis
+          </h2>
+          <p className="text-xs text-[#9CA3AF] mt-0.5">
+            Structured analysis of seniority, required proficiencies, and responsibilities.
           </p>
         </div>
+
         <Button
           onClick={() => generateMutation.mutate()}
           isLoading={generateMutation.isPending}
-          className="bg-indigo-600 hover:bg-indigo-700"
+          variant={analysis ? 'outline' : 'default'}
+          className={
+            analysis
+              ? 'text-xs h-8 px-3'
+              : 'bg-[#4D9FFF] hover:bg-[#3B8EEA] text-white text-xs h-8 px-3 shadow-none'
+          }
         >
           {analysis ? (
             <>
-              <RefreshCw className="mr-2 h-4 w-4" /> Regenerate Analysis
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Regenerate Analysis
             </>
           ) : (
             <>
-              <Sparkles className="mr-2 h-4 w-4" /> Analyze with AI
+              <Plus className="mr-1.5 h-3.5 w-3.5" /> Analyze with AI
             </>
           )}
         </Button>
-      </CardHeader>
+      </div>
 
-      <CardContent>
-        {errorMsg && (
-          <div className="mb-4 p-4 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-sm flex items-center space-x-2">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
+      {errorMsg && (
+        <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-[6px] text-rose-400 text-xs flex items-center space-x-2">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
-        {analysis ? (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
-              <div>
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-                  Seniority Level
-                </span>
-                <span className="text-sm font-bold text-slate-800">
-                  {analysis.seniority || 'Not specified'}
-                </span>
-              </div>
-              <div>
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-                  Functional Domain
-                </span>
-                <span className="text-sm font-bold text-slate-800">
-                  {analysis.domain || 'Not specified'}
-                </span>
-              </div>
-              {analysis.summary && (
-                <div className="md:col-span-2 pt-2 border-t border-slate-200">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">
-                    Role Summary
-                  </span>
-                  <p className="text-sm text-slate-700">{analysis.summary}</p>
+      {analysis ? (
+        <div className="space-y-6">
+          {/* Analysis Summary Surface */}
+          <div className="bg-[#0B0F12] border border-white/[0.06] rounded-[6px] p-4 space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {analysis.seniority && (
+                <div className="text-xs">
+                  <span className="text-[#6B7280] text-[11px] block">Seniority</span>
+                  <span className="text-[#F3F4F6] font-medium">{analysis.seniority}</span>
+                </div>
+              )}
+              {analysis.domain && (
+                <div className="text-xs">
+                  <span className="text-[#6B7280] text-[11px] block">Domain</span>
+                  <span className="text-[#F3F4F6] font-medium">{analysis.domain}</span>
                 </div>
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 mr-1.5" />
-                  Required Skills ({analysis.required_skills?.length || 0})
-                </h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {analysis.required_skills && analysis.required_skills.length > 0 ? (
-                    analysis.required_skills.map((skill, idx) => (
-                      <Badge key={idx} variant="default" className="text-xs">
-                        {skill}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-xs text-slate-400">None specified</span>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  Preferred / Nice-to-have Skills ({analysis.preferred_skills?.length || 0})
-                </h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {analysis.preferred_skills && analysis.preferred_skills.length > 0 ? (
-                    analysis.preferred_skills.map((skill, idx) => (
-                      <Badge key={idx} variant="secondary" className="text-xs">
-                        {skill}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-xs text-slate-400">None specified</span>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  Technologies & Frameworks ({analysis.technologies?.length || 0})
-                </h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {analysis.technologies && analysis.technologies.length > 0 ? (
-                    analysis.technologies.map((tech, idx) => (
-                      <Badge key={idx} variant="info" className="text-xs">
-                        {tech}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-xs text-slate-400">None specified</span>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  Keywords ({analysis.keywords?.length || 0})
-                </h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {analysis.keywords && analysis.keywords.length > 0 ? (
-                    analysis.keywords.map((kw, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {kw}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-xs text-slate-400">None specified</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {analysis.responsibilities && analysis.responsibilities.length > 0 && (
-              <div>
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  Key Responsibilities
-                </h4>
-                <ul className="list-disc list-inside text-sm text-slate-700 space-y-1 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                  {analysis.responsibilities.map((resp, idx) => (
-                    <li key={idx} className="leading-relaxed">
-                      {resp}
-                    </li>
-                  ))}
-                </ul>
+            {analysis.summary && (
+              <div className="pt-2 border-t border-white/[0.04]">
+                <span className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wider block mb-1">
+                  Analysis summary
+                </span>
+                <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                  {analysis.summary}
+                </p>
               </div>
             )}
           </div>
-        ) : (
-          <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl">
-            <Sparkles className="h-8 w-8 text-indigo-400 mx-auto mb-2 animate-bounce" />
-            <h4 className="font-semibold text-slate-900">No JD Analysis Generated Yet</h4>
-            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-4">
-              Run Gemini AI analysis to extract required skills, domain parameters, and unlock deterministic Career Vault matching.
-            </p>
-            <Button
-              onClick={() => generateMutation.mutate()}
-              isLoading={generateMutation.isPending}
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              <Sparkles className="mr-2 h-4 w-4" /> Analyze Job Posting Now
-            </Button>
+
+          {/* Grid: Required Skills, Preferred Skills, Technologies */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Required skills */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold text-[#F3F4F6] uppercase tracking-wider">
+                Required skills
+              </h3>
+              <div className="flex flex-wrap gap-1.5">
+                {analysis.required_skills && analysis.required_skills.length > 0 ? (
+                  analysis.required_skills.map((skill, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-1 rounded-[4px] bg-white/[0.04] text-[#F3F4F6] border border-white/[0.08] text-xs font-mono"
+                    >
+                      {skill}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-[#6B7280]">None specified</span>
+                )}
+              </div>
+            </div>
+
+            {/* Preferred skills */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold text-[#F3F4F6] uppercase tracking-wider">
+                Preferred skills
+              </h3>
+              <div className="flex flex-wrap gap-1.5">
+                {analysis.preferred_skills && analysis.preferred_skills.length > 0 ? (
+                  analysis.preferred_skills.map((skill, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-1 rounded-[4px] bg-white/[0.04] text-[#9CA3AF] border border-white/[0.08] text-xs font-mono"
+                    >
+                      {skill}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-[#6B7280]">None specified</span>
+                )}
+              </div>
+            </div>
+
+            {/* Technologies */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold text-[#F3F4F6] uppercase tracking-wider">
+                Technologies
+              </h3>
+              <div className="flex flex-wrap gap-1.5">
+                {analysis.technologies && analysis.technologies.length > 0 ? (
+                  analysis.technologies.map((tech, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-1 rounded-[4px] bg-[#4D9FFF]/10 text-[#4D9FFF] border border-[#4D9FFF]/20 text-xs font-mono"
+                    >
+                      {tech}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-[#6B7280]">None specified</span>
+                )}
+              </div>
+            </div>
+
+            {/* Keywords */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold text-[#F3F4F6] uppercase tracking-wider">
+                Keywords
+              </h3>
+              <div className="flex flex-wrap gap-1.5">
+                {analysis.keywords && analysis.keywords.length > 0 ? (
+                  analysis.keywords.map((kw, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-1 rounded-[4px] bg-white/[0.03] text-[#9CA3AF] border border-white/[0.06] text-xs font-mono"
+                    >
+                      {kw}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-[#6B7280]">None specified</span>
+                )}
+              </div>
+            </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {/* Responsibilities */}
+          {analysis.responsibilities && analysis.responsibilities.length > 0 && (
+            <div className="space-y-2 pt-2 border-t border-white/[0.06]">
+              <h3 className="text-xs font-semibold text-[#F3F4F6] uppercase tracking-wider">
+                Responsibilities
+              </h3>
+              <ul className="space-y-1.5 text-xs text-[#9CA3AF] leading-relaxed">
+                {analysis.responsibilities.map((resp, idx) => (
+                  <li key={idx} className="flex items-start space-x-2">
+                    <span className="text-[#6B7280] select-none shrink-0">•</span>
+                    <span>{resp}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="text-center py-10">
+          <p className="text-xs text-[#9CA3AF] mb-1">No JD analysis generated yet.</p>
+          <p className="text-[11px] text-[#6B7280] max-w-sm mx-auto mb-4">
+            Extract required skills, technologies, and qualifications to enable evidence matching.
+          </p>
+          <Button
+            onClick={() => generateMutation.mutate()}
+            isLoading={generateMutation.isPending}
+            className="bg-[#4D9FFF] hover:bg-[#3B8EEA] text-white text-xs h-8 px-4 shadow-none"
+          >
+            <Plus className="mr-1.5 h-3.5 w-3.5" /> Analyze Job Description
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

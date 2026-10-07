@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import {
-  Target,
   FileText,
   AlertCircle,
   RefreshCw,
@@ -14,9 +13,7 @@ import {
   Code,
 } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatScore } from '@/lib/utils';
 import { jobService } from '@/services/jobs';
@@ -59,40 +56,35 @@ export function MatchesSection({ jobId, hasAnalysis }: MatchesSectionProps) {
 
   if (!hasAnalysis) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <Target className="h-8 w-8 text-slate-400 mx-auto mb-2" />
-          <h3 className="font-bold text-slate-900">Career Vault Matching Pending</h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
-            Please run &quot;Analyze with AI&quot; first to compute deterministic evidence match rankings.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="bg-[#10161B] border border-white/[0.08] rounded-[8px] p-8 text-center">
+        <p className="text-xs text-[#9CA3AF]">Career Vault matching pending.</p>
+        <p className="text-[11px] text-[#6B7280] max-w-sm mx-auto mt-1">
+          Please run &quot;Analyze with AI&quot; first to compute deterministic evidence match rankings.
+        </p>
+      </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-40 w-full" />
-        <Skeleton className="h-40 w-full" />
+      <div className="space-y-3">
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <Card className="border-rose-200 bg-rose-50/30">
-        <CardContent className="p-6 text-center">
-          <AlertCircle className="h-6 w-6 text-rose-600 mx-auto mb-2" />
-          <p className="text-sm font-semibold text-rose-800">
-            Failed to load matches: {(error as Error)?.message || 'Unknown error'}
-          </p>
-          <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-3">
-            <RefreshCw className="mr-2 h-3.5 w-3.5" /> Retry Matching
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="bg-[#10161B] border border-rose-500/20 p-5 rounded-[8px] text-center">
+        <AlertCircle className="h-5 w-5 text-rose-400 mx-auto mb-2" />
+        <p className="text-xs font-medium text-rose-400">
+          Failed to load matches: {(error as Error)?.message || 'Unknown error'}
+        </p>
+        <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-3 text-xs">
+          <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Retry Matching
+        </Button>
+      </div>
     );
   }
 
@@ -106,30 +98,29 @@ export function MatchesSection({ jobId, hasAnalysis }: MatchesSectionProps) {
 
   return (
     <div className="space-y-6">
-      <Card className="border-indigo-200 bg-gradient-to-r from-indigo-50/50 to-purple-50/30">
-        <CardContent className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900 flex items-center">
-              <Target className="mr-2 h-5 w-5 text-indigo-600" /> Evidence Match Rankings
-            </h3>
-            <p className="text-xs text-slate-600 mt-1 max-w-xl">
-              Deterministic match scores based on technology alignment, required skills, and keyword occurrences in your Career Vault.
-            </p>
-          </div>
-          <Button
-            onClick={() => generateResumeMutation.mutate()}
-            isLoading={generateResumeMutation.isPending}
-            className="bg-indigo-600 hover:bg-indigo-700 shadow-md"
-          >
-            <FileText className="mr-2 h-4 w-4" /> Generate Tailored Resume
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Evidence Match Header Surface */}
+      <div className="bg-[#10161B] border border-white/[0.08] rounded-[8px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-sm font-semibold text-[#F3F4F6] tracking-tight">
+            Evidence Match Rankings
+          </h3>
+          <p className="text-xs text-[#9CA3AF] mt-0.5 max-w-xl">
+            Deterministic match scores based on technology alignment and required skills from your Career Vault.
+          </p>
+        </div>
+        <Button
+          onClick={() => generateResumeMutation.mutate()}
+          isLoading={generateResumeMutation.isPending}
+          className="bg-[#4D9FFF] hover:bg-[#3B8EEA] text-white text-xs h-8 px-3 shadow-none flex items-center shrink-0"
+        >
+          <FileText className="mr-1.5 h-3.5 w-3.5" /> Generate Tailored Resume
+        </Button>
+      </div>
 
       {generateError && (
-        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-sm flex items-center justify-between">
+        <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-[6px] text-rose-400 text-xs flex items-center justify-between">
           <span>{generateError}</span>
-          <button onClick={() => setGenerateError(null)} className="text-xs underline font-semibold">
+          <button onClick={() => setGenerateError(null)} className="text-xs underline cursor-pointer">
             Dismiss
           </button>
         </div>
@@ -137,45 +128,48 @@ export function MatchesSection({ jobId, hasAnalysis }: MatchesSectionProps) {
 
       {hasMatches ? (
         <div className="space-y-6">
+          {/* Ranked Projects */}
           {matches.projects && matches.projects.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center">
-                  <FolderKanban className="mr-2 h-4 w-4 text-indigo-600" />
-                  Ranked Projects ({matches.projects.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <div className="bg-[#10161B] border border-white/[0.08] rounded-[8px] p-5 space-y-3">
+              <h4 className="text-xs font-semibold text-[#F3F4F6] uppercase tracking-wider flex items-center pb-2 border-b border-white/[0.06]">
+                <FolderKanban className="mr-2 h-4 w-4 text-[#4D9FFF]" />
+                Ranked Projects ({matches.projects.length})
+              </h4>
+              <div className="space-y-2.5 pt-1">
                 {matches.projects.map((proj) => (
-                  <div key={proj.id} className="p-4 rounded-xl border border-slate-200 bg-white">
-                    <div className="flex items-start justify-between">
+                  <div
+                    key={proj.id}
+                    className="p-3.5 rounded-[6px] border border-white/[0.06] bg-[#0B0F12]"
+                  >
+                    <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h4 className="font-bold text-slate-900 text-base">{proj.name}</h4>
-                        {proj.role && <p className="text-xs font-medium text-indigo-600">{proj.role}</p>}
+                        <h5 className="font-semibold text-[#F3F4F6] text-xs md:text-sm">{proj.name}</h5>
+                        {proj.role && <p className="text-[11px] text-[#4D9FFF] mt-0.5">{proj.role}</p>}
                       </div>
-                      <div className="flex items-center space-x-2 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
-                        <span className="text-xs font-semibold text-slate-500">Match Score:</span>
-                        <span className="text-sm font-bold text-indigo-700">{formatScore(proj.score)}</span>
+                      <div className="flex items-center space-x-1 px-2 py-0.5 rounded-[4px] bg-[#4D9FFF]/10 border border-[#4D9FFF]/20 shrink-0">
+                        <span className="text-[10px] text-[#9CA3AF]">Match:</span>
+                        <span className="text-xs font-mono font-semibold text-[#4D9FFF]">
+                          {formatScore(proj.score)}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-1.5 mt-3">
+                    <div className="flex flex-wrap gap-1.5 mt-2.5">
                       {proj.matched_technologies.map((t, idx) => (
-                        <Badge key={idx} variant="info" className="text-[10px]">
+                        <span key={idx} className="px-2 py-0.5 rounded-[4px] bg-white/[0.04] text-[#9CA3AF] border border-white/[0.06] text-[10px] font-mono">
                           Tech: {t}
-                        </Badge>
+                        </span>
                       ))}
                       {proj.matched_skills.map((s, idx) => (
-                        <Badge key={idx} variant="default" className="text-[10px]">
+                        <span key={idx} className="px-2 py-0.5 rounded-[4px] bg-[#4D9FFF]/10 text-[#4D9FFF] border border-[#4D9FFF]/20 text-[10px] font-mono">
                           Skill: {s}
-                        </Badge>
+                        </span>
                       ))}
                     </div>
 
                     {proj.match_breakdown?.reasons && proj.match_breakdown.reasons.length > 0 && (
-                      <div className="mt-3 pt-2 border-t border-slate-100 text-xs text-slate-600">
-                        <span className="font-semibold text-slate-700">Match reasons:</span>
-                        <ul className="list-disc list-inside mt-1 space-y-0.5">
+                      <div className="mt-2.5 pt-2 border-t border-white/[0.04] text-[11px] text-[#9CA3AF]">
+                        <ul className="list-disc list-inside space-y-0.5">
                           {proj.match_breakdown.reasons.map((r, idx) => (
                             <li key={idx}>{r}</li>
                           ))}
@@ -184,49 +178,52 @@ export function MatchesSection({ jobId, hasAnalysis }: MatchesSectionProps) {
                     )}
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
+          {/* Ranked Work Experience */}
           {matches.experiences && matches.experiences.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center">
-                  <Briefcase className="mr-2 h-4 w-4 text-indigo-600" />
-                  Ranked Work Experience ({matches.experiences.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <div className="bg-[#10161B] border border-white/[0.08] rounded-[8px] p-5 space-y-3">
+              <h4 className="text-xs font-semibold text-[#F3F4F6] uppercase tracking-wider flex items-center pb-2 border-b border-white/[0.06]">
+                <Briefcase className="mr-2 h-4 w-4 text-[#4D9FFF]" />
+                Ranked Work Experience ({matches.experiences.length})
+              </h4>
+              <div className="space-y-2.5 pt-1">
                 {matches.experiences.map((exp) => (
-                  <div key={exp.id} className="p-4 rounded-xl border border-slate-200 bg-white">
-                    <div className="flex items-start justify-between">
+                  <div
+                    key={exp.id}
+                    className="p-3.5 rounded-[6px] border border-white/[0.06] bg-[#0B0F12]"
+                  >
+                    <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h4 className="font-bold text-slate-900 text-base">{exp.role}</h4>
-                        <p className="text-xs font-semibold text-indigo-600">{exp.company}</p>
+                        <h5 className="font-semibold text-[#F3F4F6] text-xs md:text-sm">{exp.role}</h5>
+                        <p className="text-[11px] text-[#4D9FFF] mt-0.5">{exp.company}</p>
                       </div>
-                      <div className="flex items-center space-x-2 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
-                        <span className="text-xs font-semibold text-slate-500">Match Score:</span>
-                        <span className="text-sm font-bold text-indigo-700">{formatScore(exp.score)}</span>
+                      <div className="flex items-center space-x-1 px-2 py-0.5 rounded-[4px] bg-[#4D9FFF]/10 border border-[#4D9FFF]/20 shrink-0">
+                        <span className="text-[10px] text-[#9CA3AF]">Match:</span>
+                        <span className="text-xs font-mono font-semibold text-[#4D9FFF]">
+                          {formatScore(exp.score)}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-1.5 mt-3">
+                    <div className="flex flex-wrap gap-1.5 mt-2.5">
                       {exp.matched_technologies.map((t, idx) => (
-                        <Badge key={idx} variant="info" className="text-[10px]">
+                        <span key={idx} className="px-2 py-0.5 rounded-[4px] bg-white/[0.04] text-[#9CA3AF] border border-white/[0.06] text-[10px] font-mono">
                           Tech: {t}
-                        </Badge>
+                        </span>
                       ))}
                       {exp.matched_skills.map((s, idx) => (
-                        <Badge key={idx} variant="default" className="text-[10px]">
+                        <span key={idx} className="px-2 py-0.5 rounded-[4px] bg-[#4D9FFF]/10 text-[#4D9FFF] border border-[#4D9FFF]/20 text-[10px] font-mono">
                           Skill: {s}
-                        </Badge>
+                        </span>
                       ))}
                     </div>
 
                     {exp.match_breakdown?.reasons && exp.match_breakdown.reasons.length > 0 && (
-                      <div className="mt-3 pt-2 border-t border-slate-100 text-xs text-slate-600">
-                        <span className="font-semibold text-slate-700">Match reasons:</span>
-                        <ul className="list-disc list-inside mt-1 space-y-0.5">
+                      <div className="mt-2.5 pt-2 border-t border-white/[0.04] text-[11px] text-[#9CA3AF]">
+                        <ul className="list-disc list-inside space-y-0.5">
                           {exp.match_breakdown.reasons.map((r, idx) => (
                             <li key={idx}>{r}</li>
                           ))}
@@ -235,65 +232,64 @@ export function MatchesSection({ jobId, hasAnalysis }: MatchesSectionProps) {
                     )}
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
+          {/* Matched Skills & Technologies */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {matches.skills && matches.skills.length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center">
-                    <ShieldCheck className="mr-2 h-4 w-4 text-emerald-600" />
-                    Matched Skills ({matches.skills.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {matches.skills.map((s) => (
-                      <div key={s.id} className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 border border-slate-100">
-                        <span className="font-semibold text-slate-800">{s.name}</span>
-                        <Badge variant="success" className="text-[10px]">
-                          {formatScore(s.score)}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="bg-[#10161B] border border-white/[0.08] rounded-[8px] p-5 space-y-3">
+                <h4 className="text-xs font-semibold text-[#F3F4F6] uppercase tracking-wider flex items-center pb-2 border-b border-white/[0.06]">
+                  <ShieldCheck className="mr-2 h-4 w-4 text-emerald-400" />
+                  Matched Skills ({matches.skills.length})
+                </h4>
+                <div className="space-y-1.5">
+                  {matches.skills.map((s) => (
+                    <div
+                      key={s.id}
+                      className="flex items-center justify-between text-xs p-2 rounded-[5px] bg-[#0B0F12] border border-white/[0.04]"
+                    >
+                      <span className="font-medium text-[#F3F4F6]">{s.name}</span>
+                      <span className="text-[11px] font-mono text-emerald-400">
+                        {formatScore(s.score)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
 
             {matches.technologies && matches.technologies.length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center">
-                    <Code className="mr-2 h-4 w-4 text-sky-600" />
-                    Matched Technologies ({matches.technologies.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {matches.technologies.map((t) => (
-                      <div key={t.id} className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 border border-slate-100">
-                        <span className="font-semibold text-slate-800">{t.name}</span>
-                        <Badge variant="info" className="text-[10px]">
-                          {formatScore(t.score)}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="bg-[#10161B] border border-white/[0.08] rounded-[8px] p-5 space-y-3">
+                <h4 className="text-xs font-semibold text-[#F3F4F6] uppercase tracking-wider flex items-center pb-2 border-b border-white/[0.06]">
+                  <Code className="mr-2 h-4 w-4 text-sky-400" />
+                  Matched Technologies ({matches.technologies.length})
+                </h4>
+                <div className="space-y-1.5">
+                  {matches.technologies.map((t) => (
+                    <div
+                      key={t.id}
+                      className="flex items-center justify-between text-xs p-2 rounded-[5px] bg-[#0B0F12] border border-white/[0.04]"
+                    >
+                      <span className="font-medium text-[#F3F4F6]">{t.name}</span>
+                      <span className="text-[11px] font-mono text-sky-400">
+                        {formatScore(t.score)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </div>
       ) : (
-        <Card className="p-8 text-center border-dashed">
-          <p className="text-sm text-slate-500">No matching evidence items found in Career Vault.</p>
-          <p className="text-xs text-slate-400 mt-1">
+        <div className="bg-[#10161B] border border-white/[0.08] rounded-[8px] p-8 text-center">
+          <p className="text-xs text-[#9CA3AF]">No matching evidence items found in Career Vault.</p>
+          <p className="text-[11px] text-[#6B7280] mt-1">
             Add relevant projects, work experience, or skills to your Career Vault to see ranked evidence.
           </p>
-        </Card>
+        </div>
       )}
     </div>
   );

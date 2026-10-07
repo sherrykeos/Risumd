@@ -2,11 +2,9 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit2, Trash2, GraduationCap, Calendar, Award } from 'lucide-react';
+import { Plus, MoreHorizontal, Edit2, Trash2, GraduationCap } from 'lucide-react';
 
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EducationModal } from './EducationModal';
@@ -20,6 +18,7 @@ export function EducationTab() {
   const [editingEdu, setEditingEdu] = useState<Education | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [actionMenuId, setActionMenuId] = useState<number | null>(null);
 
   const { data: educationList, isLoading, isError, error } = useQuery({
     queryKey: ['education'],
@@ -72,6 +71,7 @@ export function EducationTab() {
   const handleOpenEdit = (edu: Education) => {
     setEditingEdu(edu);
     setErrorMessage(null);
+    setActionMenuId(null);
     setIsModalOpen(true);
   };
 
@@ -83,102 +83,119 @@ export function EducationTab() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-28 w-full" />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="p-6 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-sm">
-        Failed to load education: {(error as Error)?.message || 'Unknown error'}
-      </div>
-    );
-  }
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900">Education</h2>
-          <p className="text-xs text-slate-500">
-            Degrees, academic background, universities, and diplomas.
-          </p>
-        </div>
-        <Button onClick={handleOpenAdd} className="bg-indigo-600 hover:bg-indigo-700">
-          <Plus className="mr-2 h-4 w-4" /> Add Education
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-[#9CA3AF]">
+          Degrees, academic background, universities, and diplomas.
+        </p>
+
+        <Button
+          onClick={handleOpenAdd}
+          className="bg-[#4D9FFF] hover:bg-[#3B8EEA] text-white text-xs font-medium h-8 px-3 rounded-[6px] shadow-none flex items-center"
+        >
+          <Plus className="mr-1.5 h-3.5 w-3.5" /> Add education
         </Button>
       </div>
 
-      {educationList && educationList.length > 0 ? (
-        <div className="space-y-4">
-          {educationList.map((edu) => (
-            <Card key={edu.id} className="hover:border-slate-300 transition-colors">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3">
-                    <div className="p-2.5 rounded-lg bg-indigo-50 text-indigo-600 mt-1">
-                      <GraduationCap className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-slate-900">{edu.degree}</h3>
-                      <p className="text-sm font-semibold text-indigo-600">{edu.institution}</p>
-                      {edu.field && (
-                        <p className="text-xs text-slate-600 mt-0.5 font-medium">Field: {edu.field}</p>
-                      )}
-                      {(edu.start_date || edu.end_date) && (
-                        <div className="flex items-center space-x-1 text-xs text-slate-500 mt-1">
-                          <Calendar className="h-3.5 w-3.5" />
-                          <span>
-                            {formatDate(edu.start_date)} - {edu.end_date ? formatDate(edu.end_date) : 'Present'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+      {isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+      ) : isError ? (
+        <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-[8px] text-rose-400 text-xs">
+          Failed to load education: {(error as Error)?.message || 'Unknown error'}
+        </div>
+      ) : educationList && educationList.length > 0 ? (
+        <div className="space-y-2.5">
+          {educationList.map((edu) => {
+            const isMenuOpen = actionMenuId === edu.id;
+            const dateRange =
+              edu.start_date || edu.end_date
+                ? `${formatDate(edu.start_date)} — ${
+                    edu.end_date ? formatDate(edu.end_date) : 'Present'
+                  }`
+                : null;
+
+            return (
+              <div
+                key={edu.id}
+                className="bg-[#10161B] border border-white/[0.08] hover:border-white/[0.14] rounded-[8px] p-4 flex flex-col md:flex-row md:items-start justify-between gap-4 transition-colors group"
+              >
+                <div className="flex items-start space-x-3.5 min-w-0 flex-1">
+                  <div className="w-9 h-9 rounded-[6px] bg-[#0B0F12] border border-white/[0.08] flex items-center justify-center text-[#4D9FFF] shrink-0 mt-0.5">
+                    <GraduationCap className="h-4 w-4" />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    {edu.grade && (
-                      <Badge variant="secondary" className="text-xs">
-                        <Award className="mr-1 h-3 w-3" /> {edu.grade}
-                      </Badge>
+
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <h3 className="font-semibold text-sm text-[#F3F4F6]">{edu.degree}</h3>
+                      <span className="text-xs text-[#4D9FFF] font-medium">· {edu.institution}</span>
+                    </div>
+
+                    <div className="flex items-center space-x-3 text-xs text-[#6B7280]">
+                      {edu.field && <span>Field: {edu.field}</span>}
+                      {dateRange && <span>· {dateRange}</span>}
+                      {edu.grade && (
+                        <span className="px-1.5 py-0.2 rounded bg-white/[0.04] text-[#9CA3AF] text-[10px]">
+                          Grade: {edu.grade}
+                        </span>
+                      )}
+                    </div>
+
+                    {edu.description && (
+                      <p className="text-xs text-[#9CA3AF] leading-relaxed pt-1 whitespace-pre-line">
+                        {edu.description}
+                      </p>
                     )}
-                    <button
-                      onClick={() => handleOpenEdit(edu)}
-                      className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                      title="Edit"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => setDeletingId(edu.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
                   </div>
                 </div>
 
-                {edu.description && (
-                  <p className="text-sm text-slate-600 mt-3 pt-3 border-t border-slate-100 whitespace-pre-line leading-relaxed">
-                    {edu.description}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                <div className="flex items-center space-x-2 self-end md:self-start shrink-0">
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setActionMenuId(isMenuOpen ? null : edu.id)}
+                      className="p-1 rounded text-[#6B7280] hover:text-[#F3F4F6] hover:bg-white/[0.06] transition-colors cursor-pointer"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+
+                    {isMenuOpen && (
+                      <div className="absolute right-0 top-full mt-1 w-28 bg-[#131A20] border border-white/[0.1] rounded-[6px] shadow-xl py-1 z-20">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(edu)}
+                          className="w-full text-left px-3 py-1.5 text-xs text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-white/[0.05] flex items-center cursor-pointer"
+                        >
+                          <Edit2 className="mr-2 h-3.5 w-3.5" /> Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeletingId(edu.id);
+                            setActionMenuId(null);
+                          }}
+                          className="w-full text-left px-3 py-1.5 text-xs text-rose-400 hover:bg-rose-500/10 flex items-center cursor-pointer"
+                        >
+                          <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
-        <Card className="p-8 text-center border-dashed">
-          <p className="text-sm text-slate-500">No education records added yet.</p>
-          <Button onClick={handleOpenAdd} variant="outline" className="mt-4">
-            <Plus className="mr-2 h-4 w-4" /> Add Education
+        <div className="bg-[#10161B] border border-white/[0.08] rounded-[8px] p-8 text-center">
+          <p className="text-xs text-[#9CA3AF]">No education records added yet.</p>
+          <Button onClick={handleOpenAdd} variant="outline" className="mt-3 text-xs">
+            <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Education
           </Button>
-        </Card>
+        </div>
       )}
 
       <EducationModal
@@ -190,9 +207,9 @@ export function EducationTab() {
       />
 
       {errorMessage && (
-        <div className="fixed bottom-4 right-4 z-50 p-4 bg-rose-600 text-white text-sm font-medium rounded-xl shadow-lg flex items-center space-x-2">
+        <div className="fixed bottom-4 right-4 z-50 p-3 bg-rose-500 text-white text-xs font-medium rounded-[6px] shadow-lg flex items-center space-x-2">
           <span>{errorMessage}</span>
-          <button onClick={() => setErrorMessage(null)} className="ml-2 underline text-xs">
+          <button onClick={() => setErrorMessage(null)} className="ml-2 underline cursor-pointer">
             Dismiss
           </button>
         </div>
@@ -202,7 +219,7 @@ export function EducationTab() {
         isOpen={deletingId !== null}
         onClose={() => setDeletingId(null)}
         onConfirm={() => deletingId && deleteMutation.mutate(deletingId)}
-        title="Delete Education Record"
+        title="Delete Education"
         message="Are you sure you want to delete this education entry?"
         isLoading={deleteMutation.isPending}
       />

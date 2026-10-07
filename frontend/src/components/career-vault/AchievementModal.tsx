@@ -82,27 +82,27 @@ export function AchievementModal({
     >
       <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
             Achievement Title *
           </label>
           <Input placeholder="e.g. 1st Place Hackathon Winner / AWS Certified Solutions Architect" {...register('title')} error={errors.title?.message} />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
             Date
           </label>
           <Input type="date" {...register('date')} error={errors.date?.message} />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
             Description
           </label>
           <Textarea rows={3} placeholder="Details about the award or achievement..." {...register('description')} error={errors.description?.message} />
         </div>
 
-        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-white/[0.08]">
           <Button variant="outline" type="button" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>

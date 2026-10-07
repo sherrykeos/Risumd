@@ -117,7 +117,7 @@ export function ApplicationModal({
     >
       <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
             Target Job *
           </label>
           <Select {...register('job_id')} error={errors.job_id?.message} disabled={Boolean(initialData)}>
@@ -131,7 +131,7 @@ export function ApplicationModal({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
             Submitted Resume Version *
           </label>
           <Select {...register('resume_version_id')} error={errors.resume_version_id?.message}>
@@ -143,7 +143,7 @@ export function ApplicationModal({
             ))}
           </Select>
           {selectedJobId && availableResumes.length === 0 && (
-            <p className="mt-1 text-xs text-rose-500">
+            <p className="mt-1 text-xs text-rose-400">
               No resumes generated for this job yet. Please generate a resume first.
             </p>
           )}
@@ -151,7 +151,7 @@ export function ApplicationModal({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Initial Status
             </label>
             <Select {...register('status')} error={errors.status?.message}>
@@ -163,7 +163,7 @@ export function ApplicationModal({
             </Select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Applied Date
             </label>
             <Input type="date" {...register('applied_at')} error={errors.applied_at?.message} />
@@ -171,13 +171,13 @@ export function ApplicationModal({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
             Notes / Referral Info
           </label>
           <Textarea rows={3} placeholder="Recruiter contacts, referral details, interview dates..." {...register('notes')} error={errors.notes?.message} />
         </div>
 
-        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-white/[0.08]">
           <Button variant="outline" type="button" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>

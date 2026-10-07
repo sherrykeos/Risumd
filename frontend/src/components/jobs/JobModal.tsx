@@ -99,13 +99,13 @@ export function JobModal({
       <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Company *
             </label>
             <Input placeholder="e.g. Google" {...register('company')} error={errors.company?.message} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Job Title *
             </label>
             <Input placeholder="e.g. Senior Backend Engineer" {...register('title')} error={errors.title?.message} />
@@ -114,13 +114,13 @@ export function JobModal({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Location
             </label>
             <Input placeholder="e.g. New York, NY (Hybrid)" {...register('location')} error={errors.location?.message} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Posting Source URL
             </label>
             <Input placeholder="https://careers.google.com/jobs/..." {...register('source_url')} error={errors.source_url?.message} />
@@ -128,7 +128,7 @@ export function JobModal({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
             Raw Job Description (JD) *
           </label>
           <Textarea
@@ -139,7 +139,7 @@ export function JobModal({
           />
         </div>
 
-        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-white/[0.08]">
           <Button variant="outline" type="button" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>

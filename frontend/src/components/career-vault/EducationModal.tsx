@@ -103,13 +103,13 @@ export function EducationModal({
       <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Institution / University *
             </label>
             <Input placeholder="e.g. Stanford University" {...register('institution')} error={errors.institution?.message} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Degree *
             </label>
             <Input placeholder="e.g. Bachelor of Science" {...register('degree')} error={errors.degree?.message} />
@@ -118,26 +118,26 @@ export function EducationModal({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Field of Study
             </label>
             <Input placeholder="e.g. Computer Science" {...register('field')} error={errors.field?.message} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
               Grade / GPA
             </label>
             <Input placeholder="e.g. 3.9 / 4.0" {...register('grade')} error={errors.grade?.message} />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
                 Start Date
               </label>
               <Input type="date" {...register('start_date')} error={errors.start_date?.message} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
                 End Date
               </label>
               <Input type="date" {...register('end_date')} error={errors.end_date?.message} />
@@ -146,13 +146,13 @@ export function EducationModal({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
             Description / Honors / Relevant Coursework
           </label>
           <Textarea rows={3} placeholder="Honors, thesis, relevant coursework..." {...register('description')} error={errors.description?.message} />
         </div>
 
-        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-white/[0.08]">
           <Button variant="outline" type="button" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
