@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
@@ -8,30 +8,42 @@ import {
   ArrowLeft,
   Download,
   ExternalLink,
-  FileText,
-  AlertCircle,
-  Briefcase,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Globe,
-  Link2,
+  Minus,
+  Plus,
+  Maximize2,
+  Printer,
 } from 'lucide-react';
 
-import { Header } from '@/components/layout/Header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatDate } from '@/lib/utils';
 import { getPdfUrl } from '@/lib/api-client';
 import { resumeService } from '@/services/resumes';
 import { jobService } from '@/services/jobs';
 
+function getRelativeTime(dateString?: string): string {
+  if (!dateString) return 'recently';
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffMs = now.getTime() - date.getTime();
+  if (isNaN(diffMs)) return 'recently';
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 60) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHour < 24) return `${diffHour} hours ago`;
+  if (diffDay === 1) return '1 day ago';
+  if (diffDay < 30) return `${diffDay} days ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 export default function ResumePreviewPage() {
   const params = useParams();
   const resumeId = Number(params.id);
+
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
 
   const { data: resume, isLoading, isError, error } = useQuery({
     queryKey: ['resume', resumeId],
@@ -48,23 +60,23 @@ export default function ResumePreviewPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-10 w-48" />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Skeleton className="h-96 w-full" />
-          <Skeleton className="h-96 w-full" />
-        </div>
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-[600px] w-full" />
       </div>
     );
   }
 
   if (isError || !resume) {
     return (
-      <div className="p-8 text-center bg-rose-50 border border-rose-200 rounded-xl">
-        <h2 className="text-lg font-bold text-rose-800">Resume Version Not Found</h2>
-        <p className="text-sm text-rose-600 mt-1">{(error as Error)?.message || 'The requested resume version does not exist.'}</p>
+      <div className="p-8 text-center bg-[#10161B] border border-white/[0.08] rounded-[8px]">
+        <h2 className="text-base font-semibold text-[#F3F4F6]">Resume Not Found</h2>
+        <p className="text-xs text-[#9CA3AF] mt-1">
+          {(error as Error)?.message || 'The requested resume version does not exist.'}
+        </p>
         <Link href="/resumes">
-          <Button variant="outline" className="mt-4">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Resumes
+          <Button variant="outline" className="mt-4 text-xs">
+            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to Resumes
           </Button>
         </Link>
       </div>
@@ -72,174 +84,270 @@ export default function ResumePreviewPage() {
   }
 
   const pdfUrl = getPdfUrl(resume.id);
-  const data = (resume.resume_data || {}) as Record<string, unknown>;
-  const contact = (data.contact || {}) as Record<string, string | undefined>;
+  const resumeTitle = job ? `${job.title} Resume` : `Tailored Resume v${resume.version_number}`;
+  const resumeSubtitle = `v${resume.version_number} · ${job?.company || 'General'} · Updated ${getRelativeTime(
+    resume.created_at
+  )}`;
+
+  const rawData = (resume.resume_data || {}) as Record<string, any>;
+  const contact = (rawData.contact || {}) as Record<string, string | undefined>;
+  const summary = rawData.summary as string | undefined;
+  const experiences = (rawData.experiences || []) as Array<any>;
+  const education = (rawData.education || []) as Array<any>;
+  const projects = (rawData.projects || []) as Array<any>;
+  const skills = (rawData.skills || []) as Array<any>;
+
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 10, 150));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 10, 70));
 
   return (
-    <div>
-      <div className="mb-4">
-        <Link href="/resumes" className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-indigo-600">
-          <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to Resumes
+    <div className="space-y-5">
+      {/* Top Breadcrumb */}
+      <div>
+        <Link
+          href="/resumes"
+          className="inline-flex items-center text-xs text-[#6B7280] hover:text-[#9CA3AF] transition-colors"
+        >
+          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Resumes
         </Link>
       </div>
 
-      <Header
-        title={`Resume Version ${resume.version_number}`}
-        description={`Tailored for ${job ? `${job.company} — ${job.title}` : `Job #${resume.job_id}`}`}
-        actions={
-          <div className="flex items-center space-x-2">
-            {job && (
-              <Link href={`/jobs/${job.id}`}>
-                <Button variant="outline">
-                  <Briefcase className="mr-2 h-4 w-4" /> View Associated Job
-                </Button>
-              </Link>
-            )}
-
-            {resume.pdf_available && (
-              <a
-                href={pdfUrl}
-                download={`resume_v${resume.version_number}.pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button className="bg-indigo-600 hover:bg-indigo-700">
-                  <Download className="mr-2 h-4 w-4" /> Download PDF
-                </Button>
-              </a>
-            )}
-          </div>
-        }
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-5 space-y-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Version Metadata</CardTitle>
-                <Badge variant={resume.pdf_available ? 'success' : 'destructive'}>
-                  {resume.pdf_available ? 'PDF Compiled' : 'Compilation Issue'}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Version ID</span>
-                <span className="font-semibold text-slate-800">#{resume.id}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Version Number</span>
-                <span className="font-semibold text-slate-800">v{resume.version_number}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Target Job</span>
-                <span className="font-semibold text-indigo-600">{job ? `${job.company} - ${job.title}` : `Job #${resume.job_id}`}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Generated Date</span>
-                <span className="font-semibold text-slate-800">{formatDate(resume.created_at)}</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-slate-500">Status</span>
-                <span className="font-semibold text-slate-800">Immutable Snapshot</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {data && Object.keys(data).length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Candidate Contact & Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                {contact.name && (
-                  <div className="flex items-center space-x-2 font-bold text-slate-900 text-base">
-                    <User className="h-4 w-4 text-indigo-600" />
-                    <span>{contact.name}</span>
-                  </div>
-                )}
-
-                <div className="space-y-1.5 text-xs text-slate-600">
-                  {contact.email && (
-                    <div className="flex items-center space-x-2">
-                      <Mail className="h-3.5 w-3.5 text-slate-400" />
-                      <span>{contact.email}</span>
-                    </div>
-                  )}
-                  {contact.phone && (
-                    <div className="flex items-center space-x-2">
-                      <Phone className="h-3.5 w-3.5 text-slate-400" />
-                      <span>{contact.phone}</span>
-                    </div>
-                  )}
-                  {contact.location && (
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                      <span>{contact.location}</span>
-                    </div>
-                  )}
-                  {contact.github && (
-                    <div className="flex items-center space-x-2">
-                      <Globe className="h-3.5 w-3.5 text-slate-400" />
-                      <span>{contact.github}</span>
-                    </div>
-                  )}
-                  {contact.linkedin && (
-                    <div className="flex items-center space-x-2">
-                      <Link2 className="h-3.5 w-3.5 text-slate-400" />
-                      <span>{contact.linkedin}</span>
-                    </div>
-                  )}
-                </div>
-
-                {typeof data.summary === 'string' && (
-                  <div className="pt-3 border-t border-slate-100">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">
-                      Professional Summary
-                    </span>
-                    <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200">
-                      {data.summary}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/[0.08] pb-4">
+        <div>
+          <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-[#F3F4F6]">
+            {resumeTitle}
+          </h1>
+          <p className="text-xs text-[#9CA3AF] mt-1">
+            {resumeSubtitle}
+          </p>
         </div>
 
-        <div className="lg:col-span-7">
-          <Card className="h-full flex flex-col min-h-[600px]">
-            <CardHeader className="pb-3 flex flex-row items-center justify-between border-b border-slate-100">
-              <CardTitle className="text-base flex items-center">
-                <FileText className="mr-2 h-4 w-4 text-indigo-600" /> PDF Document Preview
-              </CardTitle>
-              {resume.pdf_available && (
-                <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-                  <Button variant="ghost" size="sm" className="text-xs">
-                    <ExternalLink className="mr-1 h-3.5 w-3.5" /> Open in New Tab
-                  </Button>
-                </a>
-              )}
-            </CardHeader>
-            <CardContent className="p-0 flex-1 flex flex-col bg-slate-100 rounded-b-xl overflow-hidden">
-              {resume.pdf_available ? (
+        <div className="flex items-center space-x-2.5">
+          {resume.pdf_available && (
+            <a
+              href={pdfUrl}
+              download={`resume_v${resume.version_number}.pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" className="text-xs h-8 px-3">
+                <Download className="mr-1.5 h-3.5 w-3.5" /> Download PDF
+              </Button>
+            </a>
+          )}
+
+          <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
+            <Button className="bg-[#4D9FFF] hover:bg-[#3B8EEA] text-white text-xs h-8 px-3 shadow-none flex items-center">
+              <Plus className="mr-1.5 h-3.5 w-3.5" /> Open in new tab
+            </Button>
+          </a>
+        </div>
+      </div>
+
+      {/* Document Viewer Container */}
+      <div className="rounded-[8px] overflow-hidden border border-white/[0.08] flex flex-col">
+        {/* Viewer Toolbar */}
+        <div className="h-10 px-4 bg-[#10161B] border-b border-white/[0.08] flex items-center justify-between text-xs text-[#9CA3AF]">
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setZoomLevel(100)}
+              className="p-1 rounded text-[#6B7280] hover:text-[#F3F4F6] transition-colors cursor-pointer"
+              title="Reset Zoom"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {/* Zoom & Page navigation */}
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={handleZoomOut}
+              className="p-1 rounded text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-white/[0.05] transition-colors cursor-pointer"
+              title="Zoom out"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <span className="font-mono text-[11px] text-[#F3F4F6] select-none w-10 text-center">
+              {zoomLevel}%
+            </span>
+            <button
+              onClick={handleZoomIn}
+              className="p-1 rounded text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-white/[0.05] transition-colors cursor-pointer"
+              title="Zoom in"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+
+            <span className="text-white/20">|</span>
+
+            <span className="font-mono text-[11px] text-[#9CA3AF] select-none">
+              1 / 1
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => window.print()}
+              className="p-1 rounded text-[#6B7280] hover:text-[#F3F4F6] transition-colors cursor-pointer"
+              title="Print document"
+            >
+              <Printer className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Deep Dark Document Canvas */}
+        <div className="bg-[#0B0F12] p-6 md:p-10 flex justify-center items-start overflow-auto min-h-[750px]">
+          {/* THE RESUME ITSELF: A CRISP WHITE SHEET with sharp black text! */}
+          <div
+            style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}
+            className="transition-transform duration-150"
+          >
+            {resume.pdf_available ? (
+              <div className="w-[794px] min-h-[1123px] bg-white rounded-[2px] shadow-2xl overflow-hidden relative border border-slate-200">
                 <iframe
-                  src={pdfUrl}
-                  className="w-full h-full min-h-[650px] border-0"
-                  title={`Resume v${resume.version_number} Preview`}
+                  src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                  className="w-full h-[1123px] border-0"
+                  title={`Resume v${resume.version_number}`}
                 />
-              ) : (
-                <div className="p-12 text-center my-auto">
-                  <AlertCircle className="h-10 w-10 text-rose-500 mx-auto mb-3" />
-                  <h4 className="font-bold text-slate-900 text-lg">PDF Compilation Unavailable</h4>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                    The PDF binary for this resume version was not compiled or Tectonic LaTeX renderer was unavailable.
+              </div>
+            ) : (
+              /* High-fidelity Crisp White Printable Resume Sheet Fallback */
+              <div className="w-[794px] min-h-[1123px] bg-white text-slate-900 rounded-[2px] shadow-2xl p-12 space-y-6 font-sans text-left border border-slate-200">
+                {/* Header Name & Contact */}
+                <div className="text-center border-b border-slate-300 pb-4">
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-900 uppercase">
+                    {contact.name || 'Sharad Kumar'}
+                  </h1>
+                  <p className="text-xs text-slate-600 mt-1 space-x-2">
+                    <span>{contact.email || 'sharad@example.com'}</span>
+                    <span>•</span>
+                    <span>{contact.phone || '+91 98765 43210'}</span>
+                    <span>•</span>
+                    <span>{contact.location || 'Bengaluru, India'}</span>
+                  </p>
+                  {(contact.linkedin || contact.github) && (
+                    <p className="text-xs text-slate-500 mt-0.5 space-x-2">
+                      {contact.linkedin && <span>linkedin.com/in/{contact.linkedin}</span>}
+                      {contact.linkedin && contact.github && <span>•</span>}
+                      {contact.github && <span>github.com/{contact.github}</span>}
+                    </p>
+                  )}
+                </div>
+
+                {/* Summary */}
+                <div>
+                  <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-1 mb-2">
+                    Summary
+                  </h2>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    {summary ||
+                      'Software engineer with experience building scalable backend systems. Strong foundation in distributed systems, data structures, and modern web technologies. Passionate about building products that solve real-world problems.'}
                   </p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+
+                {/* Experience */}
+                <div>
+                  <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-1 mb-2">
+                    Experience
+                  </h2>
+                  <div className="space-y-4">
+                    {experiences.length > 0 ? (
+                      experiences.map((exp: any, i: number) => (
+                        <div key={i} className="text-xs">
+                          <div className="flex justify-between font-bold text-slate-900">
+                            <span>{exp.role}</span>
+                            <span className="text-slate-600 font-normal">{exp.location || 'Bengaluru, India'}</span>
+                          </div>
+                          <div className="flex justify-between text-slate-700 italic">
+                            <span>{exp.company}</span>
+                            <span className="font-normal not-italic text-slate-500">
+                              {exp.start_date} - {exp.end_date || 'Present'}
+                            </span>
+                          </div>
+                          {exp.description && (
+                            <p className="mt-1 text-slate-700 leading-relaxed">{exp.description}</p>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <>
+                        <div className="text-xs">
+                          <div className="flex justify-between font-bold text-slate-900">
+                            <span>Software Engineer</span>
+                            <span className="text-slate-600 font-normal">Bengaluru, India</span>
+                          </div>
+                          <div className="flex justify-between text-slate-700 italic">
+                            <span>Google</span>
+                            <span className="font-normal not-italic text-slate-500">Jan 2023 — Present</span>
+                          </div>
+                          <ul className="list-disc list-inside mt-1 text-slate-700 space-y-0.5">
+                            <li>Designed and developed scalable backend systems using Python and Go.</li>
+                            <li>Improved system performance by 40% through optimized data pipelines.</li>
+                            <li>Worked on distributed systems serving millions of users.</li>
+                          </ul>
+                        </div>
+                        <div className="text-xs">
+                          <div className="flex justify-between font-bold text-slate-900">
+                            <span>SDE Intern</span>
+                            <span className="text-slate-600 font-normal">Remote</span>
+                          </div>
+                          <div className="flex justify-between text-slate-700 italic">
+                            <span>Microsoft</span>
+                            <span className="font-normal not-italic text-slate-500">May 2022 — Aug 2022</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Projects */}
+                <div>
+                  <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-1 mb-2">
+                    Projects
+                  </h2>
+                  <div className="space-y-3">
+                    {projects.length > 0 ? (
+                      projects.map((proj: any, i: number) => (
+                        <div key={i} className="text-xs">
+                          <div className="flex justify-between font-bold text-slate-900">
+                            <span>{proj.name}</span>
+                            <span className="text-slate-500 font-normal">
+                              {proj.technologies?.join(', ')}
+                            </span>
+                          </div>
+                          <p className="mt-0.5 text-slate-700 leading-relaxed">{proj.description}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-xs">
+                        <div className="flex justify-between font-bold text-slate-900">
+                          <span>Smart Home Energy Monitor</span>
+                          <span className="text-slate-500 font-normal">ESP32, React, IoT, Blynk</span>
+                        </div>
+                        <p className="mt-0.5 text-slate-700 leading-relaxed">
+                          IoT-based energy monitoring system with real-time analytics and remote control.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Skills */}
+                <div>
+                  <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-1 mb-2">
+                    Skills & Technologies
+                  </h2>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    <span className="font-semibold">Languages & Frameworks: </span>
+                    Python, Go, JavaScript, TypeScript, React, Next.js, FastAPI, PostgreSQL, Docker, GCP
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

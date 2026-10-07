@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Header } from '@/components/layout/Header';
 import { ProjectsTab } from '@/components/career-vault/ProjectsTab';
 import { ExperienceTab } from '@/components/career-vault/ExperienceTab';
 import { SkillsTab } from '@/components/career-vault/SkillsTab';
@@ -31,14 +30,21 @@ export default function CareerVaultPage() {
   const [activeTab, setActiveTab] = useState('projects');
 
   return (
-    <div>
-      <Header
-        title="Career Vault"
-        description="Your central repository of professional experience, projects, skills, technologies, education, and achievements."
-      />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/[0.08] pb-5">
+        <div>
+          <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-[#F3F4F6]">
+            Career Vault
+          </h1>
+          <p className="text-xs md:text-sm text-[#9CA3AF] mt-0.5">
+            Your professional information and achievements.
+          </p>
+        </div>
+      </div>
 
-      {/* Tabs bar */}
-      <div className="flex border-b border-slate-200 mb-8 overflow-x-auto scrollbar-none">
+      {/* Understated Underline Tabs */}
+      <div className="flex border-b border-white/[0.08] space-x-6 overflow-x-auto text-xs">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -47,13 +53,13 @@ export default function CareerVaultPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'flex items-center space-x-2 py-3 px-4 font-semibold text-sm border-b-2 transition-colors whitespace-nowrap cursor-pointer',
+                'flex items-center space-x-2 py-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer',
                 isActive
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                  ? 'border-[#4D9FFF] text-[#F3F4F6]'
+                  : 'border-transparent text-[#9CA3AF] hover:text-[#F3F4F6]'
               )}
             >
-              <Icon className={cn('h-4 w-4', isActive ? 'text-indigo-600' : 'text-slate-400')} />
+              <Icon className={cn('h-3.5 w-3.5', isActive ? 'text-[#4D9FFF]' : 'text-[#6B7280]')} />
               <span>{tab.label}</span>
             </button>
           );
@@ -61,12 +67,14 @@ export default function CareerVaultPage() {
       </div>
 
       {/* Active Tab Content */}
-      {activeTab === 'projects' && <ProjectsTab />}
-      {activeTab === 'experience' && <ExperienceTab />}
-      {activeTab === 'skills' && <SkillsTab />}
-      {activeTab === 'technologies' && <TechTab />}
-      {activeTab === 'education' && <EducationTab />}
-      {activeTab === 'achievements' && <AchievementsTab />}
+      <div className="pt-2">
+        {activeTab === 'projects' && <ProjectsTab />}
+        {activeTab === 'experience' && <ExperienceTab />}
+        {activeTab === 'skills' && <SkillsTab />}
+        {activeTab === 'technologies' && <TechTab />}
+        {activeTab === 'education' && <EducationTab />}
+        {activeTab === 'achievements' && <AchievementsTab />}
+      </div>
     </div>
   );
 }

@@ -6,37 +6,36 @@ import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
-  MapPin,
-  Calendar,
   ExternalLink,
-  Sparkles,
+  Plus,
+  Edit2,
   FileText,
   Send,
-  CheckCircle2,
-  Clock,
+  Sparkles,
 } from 'lucide-react';
 
-import { Header } from '@/components/layout/Header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { JobModal } from '@/components/jobs/JobModal';
 import { JDAnalysisSection } from '@/components/jobs/JDAnalysisSection';
 import { MatchesSection } from '@/components/jobs/MatchesSection';
+import { ApplicationModal } from '@/components/applications/ApplicationModal';
 
 import { formatDate } from '@/lib/utils';
 import { jobService } from '@/services/jobs';
 import { resumeService } from '@/services/resumes';
 import { applicationService } from '@/services/applications';
-import { ApplicationModal } from '@/components/applications/ApplicationModal';
-import { ApplicationCreate } from '@/types';
+import { ApplicationCreate, JobCreate } from '@/types';
+
+type TabType = 'overview' | 'description' | 'analysis' | 'matches' | 'resumes' | 'application';
 
 export default function JobDetailPage() {
   const params = useParams();
   const queryClient = useQueryClient();
   const jobId = Number(params.id);
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'analysis' | 'matches' | 'resumes'>('overview');
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAppModalOpen, setIsAppModalOpen] = useState(false);
   const [appError, setAppError] = useState<string | null>(null);
 
@@ -59,6 +58,15 @@ export default function JobDetailPage() {
 
   const linkedApplication = applications?.find((app) => app.job_id === jobId);
 
+  const updateJobMutation = useMutation({
+    mutationFn: (data: JobCreate) => jobService.update(jobId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job', jobId] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      setIsEditModalOpen(false);
+    },
+  });
+
   const createAppMutation = useMutation({
     mutationFn: (data: ApplicationCreate) => applicationService.create(data),
     onSuccess: () => {
@@ -71,24 +79,41 @@ export default function JobDetailPage() {
     },
   });
 
+  const analyzeMutation = useMutation({
+    mutationFn: () => jobService.generateAnalysis(jobId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job', jobId] });
+      queryClient.invalidateQueries({ queryKey: ['job-matches', jobId] });
+      setActiveTab('analysis');
+    },
+    onError: (err: Error) => {
+      alert(`AI Analysis failed: ${err.message}`);
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-40 w-full" />
-        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-14 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          <Skeleton className="md:col-span-4 h-64" />
+          <Skeleton className="md:col-span-8 h-64" />
+        </div>
       </div>
     );
   }
 
   if (isError || !job) {
     return (
-      <div className="p-8 text-center bg-rose-50 border border-rose-200 rounded-xl">
-        <h2 className="text-lg font-bold text-rose-800">Job Not Found</h2>
-        <p className="text-sm text-rose-600 mt-1">{(error as Error)?.message || 'The specified job could not be retrieved.'}</p>
+      <div className="p-8 text-center bg-[#10161B] border border-white/[0.08] rounded-[8px]">
+        <h2 className="text-base font-semibold text-[#F3F4F6]">Job Not Found</h2>
+        <p className="text-xs text-[#9CA3AF] mt-1">
+          {(error as Error)?.message || 'The specified job opportunity could not be retrieved.'}
+        </p>
         <Link href="/jobs">
-          <Button variant="outline" className="mt-4">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Jobs
+          <Button variant="outline" className="mt-4 text-xs">
+            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to Jobs
           </Button>
         </Link>
       </div>
@@ -96,192 +121,309 @@ export default function JobDetailPage() {
   }
 
   return (
-    <div>
-      <div className="mb-4">
-        <Link href="/jobs" className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors">
-          <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to Jobs
+    <div className="space-y-6">
+      {/* Top Breadcrumb */}
+      <div>
+        <Link
+          href="/jobs"
+          className="inline-flex items-center text-xs text-[#6B7280] hover:text-[#9CA3AF] transition-colors"
+        >
+          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Jobs
         </Link>
       </div>
 
-      <Header
-        title={`${job.title}`}
-        description={`${job.company} ${job.location ? `• ${job.location}` : ''}`}
-        actions={
-          <div className="flex items-center space-x-2">
-            {linkedApplication ? (
-              <Badge variant="success" className="py-1.5 px-3 text-xs font-bold">
-                <Send className="mr-1.5 h-3.5 w-3.5" /> App: {linkedApplication.status}
-              </Badge>
-            ) : (
-              <Button
-                onClick={() => setIsAppModalOpen(true)}
-                disabled={!resumes || resumes.length === 0}
-                variant="outline"
-                className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
-              >
-                <Send className="mr-2 h-4 w-4" /> Create Application
-              </Button>
-            )}
-          </div>
-        }
-      />
+      {/* Page Title & Quick Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/[0.08] pb-5">
+        <div>
+          <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-[#F3F4F6]">
+            {job.title}
+          </h1>
+          <p className="text-xs text-[#9CA3AF] mt-1">
+            {job.company} · {job.location || 'Remote'} · Full-time
+          </p>
+        </div>
 
-      <Card className="mb-8">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">{job.company}</span>
-              <h2 className="text-2xl font-bold text-slate-900">{job.title}</h2>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-2">
-                {job.location && (
-                  <div className="flex items-center space-x-1">
-                    <MapPin className="h-3.5 w-3.5" />
-                    <span>{job.location}</span>
-                  </div>
-                )}
-                <div className="flex items-center space-x-1">
-                  <Calendar className="h-3.5 w-3.5" />
-                  <span>Added {formatDate(job.created_at)}</span>
-                </div>
-                {job.source_url && (
+        <div className="flex items-center space-x-2.5">
+          <Button
+            variant="outline"
+            onClick={() => setIsEditModalOpen(true)}
+            className="text-xs h-8 px-3"
+          >
+            <Edit2 className="mr-1.5 h-3.5 w-3.5" /> Edit
+          </Button>
+
+          <Button
+            onClick={() => analyzeMutation.mutate()}
+            isLoading={analyzeMutation.isPending}
+            className="bg-[#4D9FFF] hover:bg-[#3B8EEA] text-white text-xs h-8 px-3 shadow-none flex items-center"
+          >
+            <Plus className="mr-1.5 h-3.5 w-3.5" /> Analyze with AI
+          </Button>
+        </div>
+      </div>
+
+      {/* Understated Underline Tabs */}
+      <div className="flex border-b border-white/[0.08] space-x-6 overflow-x-auto text-xs">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`py-2.5 font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+            activeTab === 'overview'
+              ? 'border-[#4D9FFF] text-[#F3F4F6]'
+              : 'border-transparent text-[#9CA3AF] hover:text-[#F3F4F6]'
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setActiveTab('description')}
+          className={`py-2.5 font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+            activeTab === 'description'
+              ? 'border-[#4D9FFF] text-[#F3F4F6]'
+              : 'border-transparent text-[#9CA3AF] hover:text-[#F3F4F6]'
+          }`}
+        >
+          Job Description
+        </button>
+        <button
+          onClick={() => setActiveTab('analysis')}
+          className={`py-2.5 font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+            activeTab === 'analysis'
+              ? 'border-[#4D9FFF] text-[#F3F4F6]'
+              : 'border-transparent text-[#9CA3AF] hover:text-[#F3F4F6]'
+          }`}
+        >
+          JD Analysis
+        </button>
+        <button
+          onClick={() => setActiveTab('matches')}
+          className={`py-2.5 font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+            activeTab === 'matches'
+              ? 'border-[#4D9FFF] text-[#F3F4F6]'
+              : 'border-transparent text-[#9CA3AF] hover:text-[#F3F4F6]'
+          }`}
+        >
+          Matches
+        </button>
+        <button
+          onClick={() => setActiveTab('resumes')}
+          className={`py-2.5 font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+            activeTab === 'resumes'
+              ? 'border-[#4D9FFF] text-[#F3F4F6]'
+              : 'border-transparent text-[#9CA3AF] hover:text-[#F3F4F6]'
+          }`}
+        >
+          Resume ({resumes?.length || 0})
+        </button>
+        <button
+          onClick={() => setActiveTab('application')}
+          className={`py-2.5 font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+            activeTab === 'application'
+              ? 'border-[#4D9FFF] text-[#F3F4F6]'
+              : 'border-transparent text-[#9CA3AF] hover:text-[#F3F4F6]'
+          }`}
+        >
+          Application
+        </button>
+      </div>
+
+      {/* Tab: Overview (matching Panel 3 side-by-side layout) */}
+      {activeTab === 'overview' && (
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          {/* Left: Job Information */}
+          <div className="md:col-span-5 bg-[#10161B] border border-white/[0.08] rounded-[8px] p-5 space-y-4">
+            <h3 className="text-sm font-semibold text-[#F3F4F6] tracking-tight pb-3 border-b border-white/[0.06]">
+              Job Information
+            </h3>
+
+            <div className="space-y-3.5 text-xs">
+              <div>
+                <span className="text-[11px] font-medium text-[#6B7280] block">Company</span>
+                <span className="text-[#F3F4F6] font-medium mt-0.5 block">{job.company}</span>
+              </div>
+
+              <div>
+                <span className="text-[11px] font-medium text-[#6B7280] block">Position</span>
+                <span className="text-[#F3F4F6] font-medium mt-0.5 block">{job.title}</span>
+              </div>
+
+              <div>
+                <span className="text-[11px] font-medium text-[#6B7280] block">Location</span>
+                <span className="text-[#F3F4F6] mt-0.5 block">{job.location || 'Bengaluru, India'}</span>
+              </div>
+
+              <div>
+                <span className="text-[11px] font-medium text-[#6B7280] block">Employment type</span>
+                <span className="text-[#F3F4F6] mt-0.5 block">Full-time</span>
+              </div>
+
+              {job.source_url && (
+                <div>
+                  <span className="text-[11px] font-medium text-[#6B7280] block">Source URL</span>
                   <a
                     href={job.source_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center text-indigo-600 hover:underline"
+                    className="text-[#4D9FFF] hover:underline inline-flex items-center gap-1 mt-0.5 truncate max-w-full"
                   >
-                    <ExternalLink className="mr-1 h-3.5 w-3.5" /> Original Posting
+                    <span className="truncate">{job.source_url}</span>
+                    <ExternalLink className="h-3 w-3 shrink-0" />
                   </a>
-                )}
+                </div>
+              )}
+
+              <div>
+                <span className="text-[11px] font-medium text-[#6B7280] block">Created</span>
+                <span className="text-[#9CA3AF] mt-0.5 block">{formatDate(job.created_at)}</span>
               </div>
             </div>
-
-            <div className="flex items-center space-x-3">
-              {job.analysis ? (
-                <Badge variant="success" className="text-xs py-1 px-3">
-                  <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> JD Analyzed
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="text-xs py-1 px-3">
-                  <Clock className="mr-1 h-3.5 w-3.5" /> Pending Analysis
-                </Badge>
-              )}
-            </div>
           </div>
-        </CardContent>
-      </Card>
 
-      <div className="flex border-b border-slate-200 mb-8 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`py-3 px-5 font-semibold text-sm border-b-2 transition-colors cursor-pointer ${
-            activeTab === 'overview'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          Raw Job Description
-        </button>
-        <button
-          onClick={() => setActiveTab('analysis')}
-          className={`py-3 px-5 font-semibold text-sm border-b-2 transition-colors flex items-center cursor-pointer ${
-            activeTab === 'analysis'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Sparkles className="mr-1.5 h-4 w-4" /> JD Analysis
-        </button>
-        <button
-          onClick={() => setActiveTab('matches')}
-          className={`py-3 px-5 font-semibold text-sm border-b-2 transition-colors flex items-center cursor-pointer ${
-            activeTab === 'matches'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          Matches & Tailoring
-        </button>
-        <button
-          onClick={() => setActiveTab('resumes')}
-          className={`py-3 px-5 font-semibold text-sm border-b-2 transition-colors flex items-center cursor-pointer ${
-            activeTab === 'resumes'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <FileText className="mr-1.5 h-4 w-4" /> Generated Resumes ({resumes?.length || 0})
-        </button>
-      </div>
+          {/* Right: Job Description */}
+          <div className="md:col-span-7 bg-[#10161B] border border-white/[0.08] rounded-[8px] p-5 flex flex-col">
+            <h3 className="text-sm font-semibold text-[#F3F4F6] tracking-tight pb-3 border-b border-white/[0.06]">
+              Job Description
+            </h3>
 
-      {activeTab === 'overview' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Raw Job Description</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-sm text-slate-800 whitespace-pre-wrap leading-relaxed font-mono">
+            <div className="mt-4 max-h-[440px] overflow-y-auto pr-2 text-xs text-[#9CA3AF] leading-relaxed whitespace-pre-wrap font-sans">
               {job.raw_description}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
+      {/* Tab: Full Job Description */}
+      {activeTab === 'description' && (
+        <div className="bg-[#10161B] border border-white/[0.08] rounded-[8px] p-5">
+          <h3 className="text-sm font-semibold text-[#F3F4F6] tracking-tight pb-3 border-b border-white/[0.06] mb-4">
+            Raw Job Description
+          </h3>
+          <div className="text-xs text-[#9CA3AF] leading-relaxed whitespace-pre-wrap font-mono p-4 bg-[#0B0F12] border border-white/[0.06] rounded-[6px]">
+            {job.raw_description}
+          </div>
+        </div>
+      )}
+
+      {/* Tab: JD Analysis */}
       {activeTab === 'analysis' && (
         <JDAnalysisSection jobId={jobId} analysis={job.analysis} />
       )}
 
+      {/* Tab: Matches */}
       {activeTab === 'matches' && (
         <MatchesSection jobId={jobId} hasAnalysis={Boolean(job.analysis)} />
       )}
 
+      {/* Tab: Resumes */}
       {activeTab === 'resumes' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-900">Tailored Resume Versions</h3>
+            <h3 className="text-sm font-semibold text-[#F3F4F6]">Tailored Resume Versions</h3>
           </div>
 
           {resumesLoading ? (
-            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-20 w-full" />
           ) : resumes && resumes.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {resumes.map((resume) => (
-                <Card key={resume.id} className="hover:border-indigo-400 transition-colors">
-                  <CardContent className="p-5 flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="default" className="text-xs font-bold">
-                          v{resume.version_number}
-                        </Badge>
-                        <span className="font-bold text-slate-900 text-base">
-                          {job.company} — {job.title}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Generated {formatDate(resume.created_at)}
-                      </p>
+                <div
+                  key={resume.id}
+                  className="bg-[#10161B] border border-white/[0.08] hover:border-white/[0.16] rounded-[8px] p-4 flex items-center justify-between transition-colors"
+                >
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-semibold text-[#4D9FFF] bg-[#4D9FFF]/10 border border-[#4D9FFF]/20 px-2 py-0.5 rounded-[4px]">
+                        v{resume.version_number}
+                      </span>
+                      <span className="font-medium text-[#F3F4F6] text-xs">
+                        {job.company} — {job.title}
+                      </span>
                     </div>
+                    <p className="text-[11px] text-[#6B7280] mt-1.5">
+                      Generated {formatDate(resume.created_at)}
+                    </p>
+                  </div>
 
-                    <Link href={`/resumes/${resume.id}`}>
-                      <Button variant="outline" size="sm">
-                        Preview PDF
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
+                  <Link href={`/resumes/${resume.id}`}>
+                    <Button variant="outline" size="sm" className="text-xs">
+                      Preview PDF
+                    </Button>
+                  </Link>
+                </div>
               ))}
             </div>
           ) : (
-            <Card className="p-8 text-center border-dashed">
-              <p className="text-sm text-slate-500">No resumes generated for this job yet.</p>
-              <p className="text-xs text-slate-400 mt-1">
-                Go to the &quot;Matches & Tailoring&quot; tab to generate a tailored resume version.
-              </p>
-            </Card>
+            <div className="bg-[#10161B] border border-white/[0.08] rounded-[8px] p-8 text-center">
+              <p className="text-xs text-[#9CA3AF]">No resumes generated for this job yet.</p>
+              <button
+                type="button"
+                onClick={() => setActiveTab('matches')}
+                className="mt-2 text-xs text-[#4D9FFF] hover:underline cursor-pointer"
+              >
+                Go to Matches & Tailoring to create a resume
+              </button>
+            </div>
           )}
         </div>
       )}
 
+      {/* Tab: Application */}
+      {activeTab === 'application' && (
+        <div className="bg-[#10161B] border border-white/[0.08] rounded-[8px] p-5">
+          <h3 className="text-sm font-semibold text-[#F3F4F6] tracking-tight pb-3 border-b border-white/[0.06] mb-4">
+            Application Status
+          </h3>
+
+          {linkedApplication ? (
+            <div className="space-y-3 text-xs">
+              <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
+                <span className="text-[#6B7280]">Current Status</span>
+                <span className="font-semibold text-[#F3F4F6] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-0.5 rounded-[4px]">
+                  ● {linkedApplication.status}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
+                <span className="text-[#6B7280]">Applied Date</span>
+                <span className="text-[#F3F4F6]">{formatDate(linkedApplication.applied_at || linkedApplication.created_at)}</span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-[#6B7280]">Linked Resume Version</span>
+                <Link href={`/resumes/${linkedApplication.resume_version_id}`} className="text-[#4D9FFF] hover:underline">
+                  Resume v{linkedApplication.resume_version_id}
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <p className="text-xs text-[#9CA3AF] mb-3">No application record tracked for this job yet.</p>
+              <Button
+                onClick={() => setIsAppModalOpen(true)}
+                disabled={!resumes || resumes.length === 0}
+                className="bg-[#4D9FFF] hover:bg-[#3B8EEA] text-white text-xs"
+              >
+                <Send className="mr-1.5 h-3.5 w-3.5" /> Track Application
+              </Button>
+              {(!resumes || resumes.length === 0) && (
+                <p className="text-[11px] text-[#6B7280] mt-2">
+                  Generate a resume first to create an application tracking entry.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Edit Job Modal */}
+      <JobModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={async (data) => {
+          await updateJobMutation.mutateAsync(data);
+        }}
+        initialData={job}
+        isLoading={updateJobMutation.isPending}
+      />
+
+      {/* Application Modal */}
       {resumes && (
         <ApplicationModal
           isOpen={isAppModalOpen}
@@ -297,9 +439,9 @@ export default function JobDetailPage() {
       )}
 
       {appError && (
-        <div className="fixed bottom-4 right-4 z-50 p-4 bg-rose-600 text-white text-sm font-medium rounded-xl shadow-lg flex items-center space-x-2">
+        <div className="fixed bottom-4 right-4 z-50 p-3 bg-rose-500 text-white text-xs font-medium rounded-[6px] shadow-lg flex items-center space-x-2">
           <span>{appError}</span>
-          <button onClick={() => setAppError(null)} className="ml-2 underline text-xs">
+          <button onClick={() => setAppError(null)} className="ml-2 underline cursor-pointer">
             Dismiss
           </button>
         </div>

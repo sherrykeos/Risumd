@@ -3,7 +3,6 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Sparkles } from 'lucide-react';
 
 export default function LoginPage() {
   const { user, isLoading, login } = useAuth();
@@ -16,28 +15,23 @@ export default function LoginPage() {
   }, [user, isLoading, router]);
 
   return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center">
-      <div className="w-full max-w-md bg-white rounded-xl border border-slate-200 shadow-xs p-8 text-center">
-        {/* Brand Logo */}
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white mb-4 shadow-sm">
-          <Sparkles className="h-6 w-6" />
-        </div>
-
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+    <div className="min-h-[80vh] flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-sm bg-[#10161B] rounded-[8px] border border-white/[0.08] p-8 text-center shadow-lg shadow-black/20">
+        <h1 className="text-xl font-medium tracking-tight text-[#F3F4F6]">
           Risumd
         </h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Manage your career in one place.
+        <p className="mt-1.5 text-xs text-[#9CA3AF]">
+          Personal career and resume workspace
         </p>
 
         <div className="mt-8">
           <button
             type="button"
             onClick={login}
-            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 hover:border-slate-400 transition-colors shadow-xs"
+            className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-[6px] border border-white/[0.1] bg-[#131A20] text-[#F3F4F6] text-xs font-medium hover:bg-white/[0.04] hover:border-white/[0.16] transition-colors cursor-pointer"
           >
             {/* Google G SVG */}
-            <svg className="h-5 w-5" viewBox="0 0 24 24">
+            <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -59,8 +53,8 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <p className="mt-6 text-xs text-slate-400">
-          Secure OAuth 2.0 authentication.
+        <p className="mt-6 text-[11px] text-[#6B7280]">
+          Secure OAuth authentication
         </p>
       </div>
     </div>
