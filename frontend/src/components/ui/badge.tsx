@@ -3,23 +3,26 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  'inline-flex items-center rounded-[4px] border px-2 py-0.5 text-[11px] font-medium transition-colors select-none',
   {
     variants: {
       variant: {
         default:
-          'border-transparent bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300',
+          'border-[#4D9FFF]/25 bg-[#4D9FFF]/10 text-[#4D9FFF]',
         secondary:
-          'border-transparent bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200',
+          'border-white/[0.08] bg-white/[0.04] text-[#9CA3AF]',
         destructive:
-          'border-transparent bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300',
-        outline: 'text-slate-700 border-slate-300 dark:text-slate-300 dark:border-slate-700',
+          'border-rose-500/20 bg-rose-500/10 text-rose-400',
+        outline:
+          'border-white/[0.1] text-[#9CA3AF] bg-transparent',
         success:
-          'border-transparent bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
+          'border-emerald-500/20 bg-emerald-500/10 text-emerald-400',
         warning:
-          'border-transparent bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+          'border-amber-500/20 bg-amber-500/10 text-amber-400',
         info:
-          'border-transparent bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300',
+          'border-sky-500/20 bg-sky-500/10 text-sky-400',
+        purple:
+          'border-purple-500/20 bg-purple-500/10 text-purple-400',
       },
     },
     defaultVariants: {

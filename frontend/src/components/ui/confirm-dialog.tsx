@@ -32,12 +32,12 @@ export function ConfirmDialog({
     <Modal isOpen={isOpen} onClose={onClose} title={title} maxWidth="sm">
       <div className="flex flex-col items-center text-center py-2 space-y-4">
         {variant === 'destructive' && (
-          <div className="rounded-full bg-rose-100 p-3 text-rose-600 dark:bg-rose-950 dark:text-rose-400">
-            <AlertTriangle className="h-6 w-6" />
+          <div className="rounded-[8px] bg-rose-500/10 p-2.5 text-rose-400 border border-rose-500/20">
+            <AlertTriangle className="h-5 w-5" />
           </div>
         )}
-        <p className="text-sm text-slate-600 dark:text-slate-300">{message}</p>
-        <div className="flex items-center justify-end space-x-3 w-full pt-4 border-t border-slate-100 dark:border-slate-800">
+        <p className="text-xs md:text-sm text-[#9CA3AF] leading-relaxed">{message}</p>
+        <div className="flex items-center justify-end space-x-2.5 w-full pt-4 border-t border-white/[0.08]">
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             {cancelText}
           </Button>

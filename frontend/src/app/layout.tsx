@@ -18,14 +18,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full bg-slate-50 antialiased">
-      <body className={`${inter.className} min-h-full flex flex-col bg-slate-50 text-slate-900`}>
+    <html lang="en" className="h-full bg-[#0B0F12] text-[#F3F4F6] antialiased">
+      <body className={`${inter.className} min-h-full flex flex-col bg-[#0B0F12] text-[#F3F4F6]`}>
         <Providers>
           <MobileNav />
           <div className="flex flex-1">
             <Sidebar />
-            <main className="flex-1 lg:pl-64 flex flex-col min-h-screen">
-              <div className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">
+            <main className="flex-1 lg:pl-[230px] flex flex-col min-h-screen">
+              <div className="flex-1 p-6 md:p-8 max-w-[1400px] w-full mx-auto">
                 {children}
               </div>
             </main>

@@ -4,22 +4,22 @@ import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
+  'inline-flex items-center justify-center rounded-[6px] text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-[#4D9FFF]/50 disabled:pointer-events-none disabled:opacity-40 cursor-pointer select-none active:scale-[0.99]',
   {
     variants: {
       variant: {
-        default: 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs dark:bg-indigo-500 dark:hover:bg-indigo-600',
-        destructive: 'bg-rose-600 text-white hover:bg-rose-700 shadow-xs',
-        outline: 'border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800',
-        secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700',
-        ghost: 'hover:bg-slate-100 text-slate-700 dark:hover:bg-slate-800 dark:text-slate-200',
-        link: 'text-indigo-600 underline-offset-4 hover:underline dark:text-indigo-400',
+        default: 'bg-[#4D9FFF] text-white hover:bg-[#3B8EEA] shadow-none',
+        destructive: 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20',
+        outline: 'border border-white/[0.1] bg-[#10161B] hover:bg-[#151D24] text-[#F3F4F6] hover:border-white/[0.18]',
+        secondary: 'bg-[#131A20] text-[#F3F4F6] border border-white/[0.08] hover:bg-[#182027]',
+        ghost: 'hover:bg-white/[0.06] text-[#9CA3AF] hover:text-[#F3F4F6]',
+        link: 'text-[#4D9FFF] underline-offset-4 hover:underline p-0 h-auto',
       },
       size: {
-        default: 'h-9 px-4 py-2',
-        sm: 'h-8 rounded-md px-3 text-xs',
-        lg: 'h-10 rounded-lg px-6 text-base',
-        icon: 'h-9 w-9',
+        default: 'h-8 px-3.5',
+        sm: 'h-7 rounded-[5px] px-2.5 text-[11px]',
+        lg: 'h-9 rounded-[7px] px-4 text-sm',
+        icon: 'h-8 w-8',
       },
     },
     defaultVariants: {
